@@ -23,7 +23,7 @@ export const scheduleData: ScheduleEntry[] = [
 
 export const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
-export const timeSlots = ['09:00 - 10:30', '10:30 - 12:00', '12:00 - 01:00', '01:00 - 02:30', '02:30 - 04:00'];
+export const initialTimeSlots = ['09:00 - 10:30', '10:30 - 12:00', '12:00 - 01:00', '01:00 - 02:30', '02:30 - 04:00'];
 
 export const getUniqueRooms = () => {
     const rooms = new Set(scheduleData.map(entry => entry.room));

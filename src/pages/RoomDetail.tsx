@@ -1,23 +1,29 @@
-
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { days, timeSlots, ScheduleEntry } from '@/data/schedule';
+import { days, ScheduleEntry } from '@/data/schedule';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
 import { cn } from '@/lib/utils';
-import { Edit } from 'lucide-react';
+import { Edit, Trash2, Plus } from 'lucide-react';
 import { EditScheduleModal } from '@/components/EditScheduleModal';
-import { Badge } from '@/components/ui/badge';
+import { EditTimeSlotModal } from '@/components/EditTimeSlotModal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/components/ui/use-toast";
+
 
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
-  const { role, schedule } = useApp();
+  const { role, schedule, timeSlots, deleteTimeSlot } = useApp();
   const isAdmin = role === 'admin';
+  const { toast } = useToast();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null);
+
+  const [isTimingModalOpen, setIsTimingModalOpen] = useState(false);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
 
   const roomSchedule = schedule.filter(entry => entry.room === roomId);
   const roomExists = schedule.some(entry => entry.room === roomId);
@@ -57,6 +63,28 @@ export default function RoomDetail() {
     setIsModalOpen(true);
   }
 
+  const handleEditTimeSlotClick = (slot: string) => {
+    setSelectedTimeSlot(slot);
+    setIsTimingModalOpen(true);
+  };
+  
+  const handleAddTimeSlotClick = () => {
+    setSelectedTimeSlot(null);
+    setIsTimingModalOpen(true);
+  };
+  
+  const handleDeleteTimeSlot = (slot: string) => {
+    if (window.confirm(`Are you sure you want to delete the time slot "${slot}"? This will also remove all scheduled classes in this slot.`)) {
+      deleteTimeSlot(slot);
+      toast({
+        title: "Time Slot Deleted",
+        description: `The time slot ${slot} and all associated classes have been removed.`,
+        variant: "destructive",
+      });
+    }
+  };
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -82,12 +110,45 @@ export default function RoomDetail() {
             <Card>
                 <CardHeader>
                     <CardTitle>Subjects Taught in Room {roomId}</CardTitle>
+                    <CardDescription>Click edit to modify a specific class session.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {subjects.length > 0 ? (
-                        <ul className="list-disc space-y-2 pl-5">
-                            {subjects.map(s => <li key={s}>{s}</li>)}
-                        </ul>
+                        <div className="space-y-6">
+                            {subjects.map(subject => (
+                              <div key={subject}>
+                                <h4 className="font-semibold mb-2 border-b pb-2">{subject}</h4>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Day</TableHead>
+                                      <TableHead>Time</TableHead>
+                                      <TableHead>Faculty</TableHead>
+                                      <TableHead>Class</TableHead>
+                                      {isAdmin && <TableHead className="w-10"></TableHead>}
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {roomSchedule.filter(e => e.subject === subject).map(entry => (
+                                      <TableRow key={`${entry.day}-${entry.time}-${entry.faculty}`}>
+                                        <TableCell>{entry.day}</TableCell>
+                                        <TableCell>{entry.time}</TableCell>
+                                        <TableCell>{entry.faculty}</TableCell>
+                                        <TableCell>{entry.class}</TableCell>
+                                        {isAdmin && (
+                                          <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(entry)}>
+                                              <Edit className="h-4 w-4" />
+                                            </Button>
+                                          </TableCell>
+                                        )}
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            ))}
+                        </div>
                     ) : (
                         <p className="text-muted-foreground">No subjects are taught in this room.</p>
                     )}
@@ -97,13 +158,46 @@ export default function RoomDetail() {
         <TabsContent value="faculty" className="mt-4">
             <Card>
                 <CardHeader>
-                    <CardTitle>Faculty Associated with Room {roomId}</CardTitle>
+                    <CardTitle>Faculty in Room {roomId}</CardTitle>
+                    <CardDescription>Click edit to modify a specific class session.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {faculty.length > 0 ? (
-                        <ul className="list-disc space-y-2 pl-5">
-                            {faculty.map(f => <li key={f}>{f}</li>)}
-                        </ul>
+                        <div className="space-y-6">
+                            {faculty.map(f => (
+                              <div key={f}>
+                                <h4 className="font-semibold mb-2 border-b pb-2">{f}</h4>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead>Day</TableHead>
+                                      <TableHead>Time</TableHead>
+                                      <TableHead>Subject</TableHead>
+                                      <TableHead>Class</TableHead>
+                                      {isAdmin && <TableHead className="w-10"></TableHead>}
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {roomSchedule.filter(e => e.faculty === f).map(entry => (
+                                      <TableRow key={`${entry.day}-${entry.time}-${entry.subject}`}>
+                                        <TableCell>{entry.day}</TableCell>
+                                        <TableCell>{entry.time}</TableCell>
+                                        <TableCell>{entry.subject}</TableCell>
+                                        <TableCell>{entry.class}</TableCell>
+                                        {isAdmin && (
+                                          <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(entry)}>
+                                              <Edit className="h-4 w-4" />
+                                            </Button>
+                                          </TableCell>
+                                        )}
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            ))}
+                        </div>
                     ) : (
                         <p className="text-muted-foreground">No faculty are associated with this room.</p>
                     )}
@@ -114,6 +208,7 @@ export default function RoomDetail() {
             <Card>
                 <CardHeader>
                     <CardTitle>Scheduled Breaks in Room {roomId}</CardTitle>
+                    <CardDescription>Click edit to modify or delete a break.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {breaks.length > 0 ? (
@@ -122,6 +217,7 @@ export default function RoomDetail() {
                                 <TableRow>
                                     <TableHead>Day</TableHead>
                                     <TableHead>Time</TableHead>
+                                    {isAdmin && <TableHead className="w-[100px] text-right">Actions</TableHead>}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -129,6 +225,13 @@ export default function RoomDetail() {
                                     <TableRow key={`${b.day}-${b.time}-${i}`}>
                                         <TableCell>{b.day}</TableCell>
                                         <TableCell>{b.time}</TableCell>
+                                        {isAdmin && (
+                                          <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(b)}>
+                                              <Edit className="h-4 w-4" />
+                                            </Button>
+                                          </TableCell>
+                                        )}
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -141,14 +244,48 @@ export default function RoomDetail() {
         </TabsContent>
         <TabsContent value="timings" className="mt-4">
             <Card>
-                <CardHeader>
+                <CardHeader className="flex-row items-center justify-between">
+                  <div>
                     <CardTitle>College Timings</CardTitle>
                     <CardDescription>Available time slots for scheduling classes.</CardDescription>
+                  </div>
+                  {isAdmin && (
+                    <Button size="sm" onClick={handleAddTimeSlotClick}>
+                      <Plus className="mr-2 h-4 w-4" /> Add Time Slot
+                    </Button>
+                  )}
                 </CardHeader>
                 <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                        {timeSlots.map(slot => <Badge variant="secondary" key={slot}>{slot}</Badge>)}
-                    </div>
+                  <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Start Time</TableHead>
+                            <TableHead>End Time</TableHead>
+                            {isAdmin && <TableHead className="w-[120px] text-right">Actions</TableHead>}
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {timeSlots.map(slot => {
+                            const [start, end] = slot.split(' - ');
+                            return (
+                                <TableRow key={slot}>
+                                    <TableCell>{start || 'N/A'}</TableCell>
+                                    <TableCell>{end || 'N/A'}</TableCell>
+                                    {isAdmin && (
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => handleEditTimeSlotClick(slot)}>
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteTimeSlot(slot)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </TableCell>
+                                    )}
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                  </Table>
                 </CardContent>
             </Card>
         </TabsContent>
@@ -220,6 +357,13 @@ export default function RoomDetail() {
           isOpen={isModalOpen}
           onOpenChange={setIsModalOpen}
           scheduleEntry={selectedEntry}
+        />
+      )}
+      {isAdmin && (
+        <EditTimeSlotModal
+            isOpen={isTimingModalOpen}
+            onOpenChange={setIsTimingModalOpen}
+            timeSlot={selectedTimeSlot}
         />
       )}
     </div>

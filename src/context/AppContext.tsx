@@ -1,6 +1,5 @@
-
 import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { ScheduleEntry, scheduleData as initialScheduleData } from '@/data/schedule';
+import { ScheduleEntry, scheduleData as initialScheduleData, initialTimeSlots } from '@/data/schedule';
 
 type Role = 'admin' | 'user';
 
@@ -12,6 +11,10 @@ interface AppContextType {
   schedule: ScheduleEntry[];
   updateSchedule: (entry: ScheduleEntry) => void;
   deleteSchedule: (entry: ScheduleEntry) => void;
+  timeSlots: string[];
+  addTimeSlot: (timeSlot: string) => void;
+  updateTimeSlot: (oldTimeSlot: string, newTimeSlot: string) => void;
+  deleteTimeSlot: (timeSlot: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -20,6 +23,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<Role>('admin');
   const [isLoading, setIsLoading] = useState(false);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>(initialScheduleData);
+  const [timeSlots, setTimeSlots] = useState<string[]>(initialTimeSlots);
 
   const updateSchedule = (entryToUpdate: ScheduleEntry) => {
     setSchedule(currentSchedule => {
@@ -47,7 +51,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  const value = { role, setRole, isLoading, setIsLoading, schedule, updateSchedule, deleteSchedule };
+  const addTimeSlot = (timeSlot: string) => {
+    setTimeSlots(current => {
+      if (current.includes(timeSlot)) {
+        return current;
+      }
+      return [...current, timeSlot].sort();
+    });
+  };
+
+  const updateTimeSlot = (oldTimeSlot: string, newTimeSlot: string) => {
+    setTimeSlots(current =>
+      current.map(ts => (ts === oldTimeSlot ? newTimeSlot : ts)).sort()
+    );
+    // Also update schedule entries that use this time slot
+    setSchedule(currentSchedule =>
+      currentSchedule.map(e => (e.time === oldTimeSlot ? { ...e, time: newTimeSlot } : e))
+    );
+  };
+
+  const deleteTimeSlot = (timeSlot: string) => {
+    // This will also delete schedule entries in this slot.
+    setTimeSlots(current => current.filter(ts => ts !== timeSlot));
+    setSchedule(currentSchedule => currentSchedule.filter(e => e.time !== timeSlot));
+  };
+
+  const value = { role, setRole, isLoading, setIsLoading, schedule, updateSchedule, deleteSchedule, timeSlots, addTimeSlot, updateTimeSlot, deleteTimeSlot };
 
   return (
     <AppContext.Provider value={value}>

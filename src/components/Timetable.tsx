@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { scheduleData, days, timeSlots } from '@/data/schedule';
+import { days } from '@/data/schedule';
 
 export function Timetable() {
-  const { role } = useApp();
+  const { role, schedule, timeSlots } = useApp();
   const isAdmin = role === 'admin';
   return (
     <Card>
@@ -28,7 +28,7 @@ export function Timetable() {
                 <TableRow key={timeSlot}>
                   <TableCell className="font-medium text-muted-foreground">{timeSlot}</TableCell>
                   {days.map(day => {
-                    const entries = scheduleData.filter(s => s.day === day && s.time === timeSlot);
+                    const entries = schedule.filter(s => s.day === day && s.time === timeSlot);
                     
                     if (entries.length === 0) {
                         return <TableCell key={day}></TableCell>
