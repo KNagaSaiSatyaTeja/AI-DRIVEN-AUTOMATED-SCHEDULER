@@ -1,11 +1,10 @@
 
 import { NavLink } from 'react-router-dom';
-import { Calendar, Users, Bot } from 'lucide-react';
+import { Calendar, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Calendar },
-  { name: 'Faculty', href: '/faculty', icon: Users },
 ];
 
 export function Sidebar() {
