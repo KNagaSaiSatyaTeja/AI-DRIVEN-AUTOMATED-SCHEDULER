@@ -65,6 +65,38 @@ export function GenerateTimetableModal({ isOpen, onOpenChange, config, onConfirm
   };
   
   const handleConfirm = () => {
+    const selectedSubjectsDetails = config.subjects
+      .filter(subject => selectedSubjectIds.includes(subject.id))
+      .map(subject => {
+        const faculties = config.faculty
+          .filter(faculty => subject.facultyIds.includes(faculty.id))
+          .map(faculty => ({
+            id: faculty.id,
+            name: faculty.name,
+            availability: faculty.availability,
+          }));
+        return {
+          name: subject.name,
+          duration: subject.duration,
+          time: subject.duration, // As per your requested format
+          no_of_classes_per_week: subject.no_of_classes_per_week,
+          faculty: faculties,
+        };
+      });
+
+    const data = {
+      college_time: localConfig.collegeTime,
+      break_: localConfig.breaks.map(b => ({
+        day: b.day,
+        startTime: b.startTime,
+        endTime: b.endTime,
+      })),
+      rooms: config.rooms,
+      subjects: selectedSubjectsDetails,
+    };
+
+    console.log("Generated data from form:", JSON.stringify(data, null, 2));
+
     const generationConfig: TimetableConfig = {
       ...config,
       collegeTime: localConfig.collegeTime,
