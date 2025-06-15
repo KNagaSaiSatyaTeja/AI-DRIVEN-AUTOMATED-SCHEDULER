@@ -1,5 +1,6 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { ScheduleEntry, scheduleData as initialScheduleData, initialTimeSlots, TimetableConfig, days, SubjectConfig } from '@/data/schedule';
+
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { ScheduleEntry, scheduleData as initialScheduleData, initialTimeSlots } from '@/data/schedule';
 import axios from 'axios';
 
 type Role = 'admin' | 'user';
@@ -23,10 +24,43 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [role, setRole] = useState<Role | null>(null);
+  const [role, setRole] = useState<Role | null>(() => {
+    const savedRole = localStorage.getItem('timetable-role');
+    return savedRole ? savedRole as Role : null;
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const [schedule, setSchedule] = useState<ScheduleEntry[]>(initialScheduleData);
-  const [timeSlots, setTimeSlots] = useState<string[]>(initialTimeSlots);
+  const [schedule, setSchedule] = useState<ScheduleEntry[]>(() => {
+    const saved = localStorage.getItem('timetable-schedule');
+    try {
+        return saved ? JSON.parse(saved) : initialScheduleData;
+    } catch {
+        return initialScheduleData;
+    }
+  });
+  const [timeSlots, setTimeSlots] = useState<string[]>(() => {
+    const saved = localStorage.getItem('timetable-timeSlots');
+    try {
+        return saved ? JSON.parse(saved) : initialTimeSlots;
+    } catch {
+        return initialTimeSlots;
+    }
+  });
+
+  useEffect(() => {
+    if (role) {
+      localStorage.setItem('timetable-role', role);
+    } else {
+      localStorage.removeItem('timetable-role');
+    }
+  }, [role]);
+
+  useEffect(() => {
+    localStorage.setItem('timetable-schedule', JSON.stringify(schedule));
+  }, [schedule]);
+  
+  useEffect(() => {
+    localStorage.setItem('timetable-timeSlots', JSON.stringify(timeSlots));
+  }, [timeSlots]);
 
   const logout = () => {
     setRole(null);

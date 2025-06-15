@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { days as originalDays, ScheduleEntry, TimetableConfig, configDays, CollegeTime, BreakConfig, SubjectConfig, FacultyConfig, ConfigDay } from '@/data/schedule';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -26,6 +27,18 @@ export default function RoomDetail() {
   const roomExistsInSchedule = schedule.some(entry => entry.room === roomId);
 
   const [config, setConfig] = useState<TimetableConfig>(() => {
+    const savedConfig = localStorage.getItem('timetable-config');
+    if (savedConfig) {
+      try {
+        const parsed = JSON.parse(savedConfig);
+        if (parsed.collegeTime && parsed.rooms) {
+            return parsed;
+        }
+      } catch (e) {
+        console.error("Failed to parse config from localStorage", e);
+      }
+    }
+    
     // If room exists in the initial data, load some sample config.
     if (roomExistsInSchedule) {
       return {
@@ -57,6 +70,10 @@ export default function RoomDetail() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('timetable-config', JSON.stringify(config));
+  }, [config]);
 
   const roomSchedule = schedule.filter(entry => entry.room === roomId);
 
