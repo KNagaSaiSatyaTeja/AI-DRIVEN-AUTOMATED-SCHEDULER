@@ -215,21 +215,21 @@ export default function RoomDetail() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[120px]">Time</TableHead>
-                          {originalDays.map(day => <TableHead key={day}>{day}</TableHead>)}
+                          <TableHead className="w-[120px]">Day</TableHead>
+                          {timeSlots.map(timeSlot => <TableHead key={timeSlot}>{timeSlot}</TableHead>)}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {timeSlots.map(timeSlot => (
-                          <TableRow key={timeSlot}>
-                            <TableCell className="font-medium text-muted-foreground">{timeSlot}</TableCell>
-                            {originalDays.map(day => {
+                        {originalDays.map(day => (
+                          <TableRow key={day}>
+                            <TableCell className="font-medium text-muted-foreground">{day}</TableCell>
+                            {timeSlots.map(timeSlot => {
                               const entry = roomSchedule.find(s => s.day === day && s.time === timeSlot);
                               const isBreak = entry?.subject === 'Break';
 
                               if (isBreak) {
                                 return (
-                                    <TableCell key={day} className={cn('relative h-24 bg-muted/50', isAdmin ? "cursor-pointer hover:bg-accent" : "")} onClick={() => isAdmin && entry && handleEditClick(entry)}>
+                                    <TableCell key={timeSlot} className={cn('relative h-24 bg-muted/50', isAdmin ? "cursor-pointer hover:bg-accent" : "")} onClick={() => isAdmin && entry && handleEditClick(entry)}>
                                         <div className="flex items-center justify-center h-full text-sm font-medium text-muted-foreground">
                                             Break
                                         </div>
@@ -239,7 +239,7 @@ export default function RoomDetail() {
                               }
                               
                               return (
-                                <TableCell key={day} className={cn('relative h-24', isAdmin ? "cursor-pointer hover:bg-accent" : "")} onClick={() => isAdmin && (entry ? handleEditClick(entry) : handleAddFromTimetable(day, timeSlot))}>
+                                <TableCell key={timeSlot} className={cn('relative h-24', isAdmin ? "cursor-pointer hover:bg-accent" : "")} onClick={() => isAdmin && (entry ? handleEditClick(entry) : handleAddFromTimetable(day, timeSlot))}>
                                   {entry ? (
                                     <div className="flex flex-col gap-1 text-sm">
                                       <p className="font-semibold">{entry.subject}</p>
