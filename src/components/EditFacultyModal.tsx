@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { FacultyConfig, configDays } from '@/data/schedule';
+import { FacultyConfig, configDays, FacultyAvailability } from '@/data/schedule';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
 
@@ -63,7 +62,7 @@ export function EditFacultyModal({ isOpen, onOpenChange, faculty, onSave }: Edit
     onSave({
       id: faculty?.id || '', // id set by parent
       name: data.name,
-      availability: data.availability || [],
+      availability: (data.availability || []) as FacultyAvailability[],
     });
   };
 
