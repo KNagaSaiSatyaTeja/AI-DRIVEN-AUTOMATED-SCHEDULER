@@ -1,13 +1,15 @@
+
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { scheduleData, days, timeSlots, ScheduleEntry } from '@/data/schedule';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
 import { cn } from '@/lib/utils';
 import { Edit } from 'lucide-react';
 import { EditScheduleModal } from '@/components/EditScheduleModal';
+import { Badge } from '@/components/ui/badge';
 
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -18,6 +20,8 @@ export default function RoomDetail() {
 
   const roomSchedule = scheduleData.filter(entry => entry.room === roomId);
   const roomExists = scheduleData.some(entry => entry.room === roomId);
+  const subjects = [...new Set(roomSchedule.map(e => e.subject).filter(s => s && s !== 'Break'))];
+  const faculty = [...new Set(roomSchedule.map(e => e.faculty).filter(f => f))];
 
   if (!roomExists) {
     return (
@@ -60,13 +64,44 @@ export default function RoomDetail() {
                     Back to All Rooms
                 </Link>
             </Button>
-            <h1 className="text-2xl font-bold">Schedule for Room: {roomId}</h1>
+            <h1 className="text-2xl font-bold">Management for Room: {roomId}</h1>
             <p className="text-muted-foreground">
-                Detailed weekly schedule for this room. Admins can click on a slot to edit.
+                Admins can click on a slot to edit.
             </p>
         </div>
       </div>
+      
       <Card>
+        <CardHeader>
+            <CardTitle>Room Summary</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-x-6 gap-y-4 text-sm">
+            {subjects.length > 0 && (
+                <div>
+                    <h4 className="font-semibold mb-2 text-muted-foreground">Subjects Taught</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {subjects.map(s => <Badge key={s} variant="secondary">{s}</Badge>)}
+                    </div>
+                </div>
+            )}
+            {faculty.length > 0 && (
+                <div>
+                    <h4 className="font-semibold mb-2 text-muted-foreground">Associated Faculty</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {faculty.map(f => <Badge key={f} variant="outline">{f}</Badge>)}
+                    </div>
+                </div>
+            )}
+            {(subjects.length === 0 && faculty.length === 0) && (
+                <p className="text-muted-foreground">No subjects or faculty assigned to this room yet.</p>
+            )}
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+            <CardTitle>Weekly Schedule</CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>

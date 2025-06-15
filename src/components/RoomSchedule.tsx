@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useApp } from '@/context/AppContext';
 import { ArrowRight } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface RoomScheduleProps {
   roomId: string;
@@ -15,6 +16,8 @@ export function RoomSchedule({ roomId }: RoomScheduleProps) {
   const { role } = useApp();
   const isAdmin = role === 'admin';
   const roomSchedule = scheduleData.filter(entry => entry.room === roomId);
+  const subjects = [...new Set(roomSchedule.map(e => e.subject).filter(s => s && s !== 'Break'))];
+  const faculty = [...new Set(roomSchedule.map(e => e.faculty).filter(f => f))];
 
   return (
     <Card>
@@ -30,6 +33,26 @@ export function RoomSchedule({ roomId }: RoomScheduleProps) {
         )}
       </CardHeader>
       <CardContent>
+        {(subjects.length > 0 || faculty.length > 0) && (
+            <div className="mb-4 flex flex-wrap gap-x-6 gap-y-4 text-sm border-b pb-4">
+                {subjects.length > 0 && (
+                    <div>
+                        <h4 className="font-semibold mb-2 text-muted-foreground">Subjects</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {subjects.map(s => <Badge key={s} variant="secondary">{s}</Badge>)}
+                        </div>
+                    </div>
+                )}
+                {faculty.length > 0 && (
+                    <div>
+                        <h4 className="font-semibold mb-2 text-muted-foreground">Faculty</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {faculty.map(f => <Badge key={f} variant="outline">{f}</Badge>)}
+                        </div>
+                    </div>
+                )}
+            </div>
+        )}
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
