@@ -252,6 +252,9 @@ export default function RoomDetail() {
           isOpen={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
           scheduleEntry={selectedEntry}
+          subjects={config.subjects}
+          faculty={config.faculty}
+          rooms={config.rooms}
         />
       )}
     </div>

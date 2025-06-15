@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ScheduleEntry, days } from '@/data/schedule';
+import { ScheduleEntry, days, SubjectConfig, FacultyConfig } from '@/data/schedule';
 import { useForm } from 'react-hook-form';
 import {
     Form,
@@ -34,9 +34,12 @@ interface EditScheduleModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   scheduleEntry: ScheduleEntry;
+  subjects: SubjectConfig[];
+  faculty: FacultyConfig[];
+  rooms: string[];
 }
 
-export function EditScheduleModal({ isOpen, onOpenChange, scheduleEntry }: EditScheduleModalProps) {
+export function EditScheduleModal({ isOpen, onOpenChange, scheduleEntry, subjects, faculty, rooms }: EditScheduleModalProps) {
     const { toast } = useToast();
     const { updateSchedule, deleteSchedule, schedule, timeSlots } = useApp();
     const form = useForm<ScheduleEntry>({
@@ -90,7 +93,7 @@ export function EditScheduleModal({ isOpen, onOpenChange, scheduleEntry }: EditS
     const onMarkAsBreak = () => {
         const currentValues = form.getValues();
         form.reset({
-            room: scheduleEntry.room,
+            room: isSlotEditable ? currentValues.room : scheduleEntry.room,
             day: isSlotEditable ? currentValues.day : scheduleEntry.day,
             time: isSlotEditable ? currentValues.time : scheduleEntry.time,
             subject: 'Break',
@@ -99,80 +102,109 @@ export function EditScheduleModal({ isOpen, onOpenChange, scheduleEntry }: EditS
         });
     }
 
-    const isBreak = form.watch('subject') === 'Break';
+    const selectedSubjectName = form.watch('subject');
+    const isBreak = selectedSubjectName === 'Break';
+    const selectedSubject = subjects.find(s => s.name === selectedSubjectName);
+    const availableFaculty = selectedSubject
+        ? faculty.filter(f => selectedSubject.facultyIds.includes(f.id))
+        : [];
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{isSlotEditable ? "Add New Schedule Entry" : "Edit Schedule Entry"}</DialogTitle>
           <DialogDescription>
             {isSlotEditable 
-                ? `Add a new entry for Room ${scheduleEntry.room}. Select a slot and fill in the details.` 
+                ? `Add a new entry. Select a room, slot and fill in the details.` 
                 : `Modify the details for this time slot in Room ${scheduleEntry.room}.`}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    {isSlotEditable ? (
-                        <>
-                            <FormField
-                                control={form.control}
-                                name="day"
-                                rules={{ required: "Day is required." }}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Day</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a day" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {days.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="time"
-                                rules={{ required: "Time is required." }}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Time</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a time slot" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {timeSlots.sort().map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </>
-                    ) : (
-                        <>
-                            <div className="space-y-2">
-                                <Label>Day</Label>
-                                <Input value={scheduleEntry.day} readOnly disabled />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Time</Label>
-                                <Input value={scheduleEntry.time} readOnly disabled />
-                            </div>
-                        </>
-                    )}
-                </div>
+                {isSlotEditable ? (
+                    <div className="grid grid-cols-3 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="room"
+                            rules={{ required: "Room is required." }}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Room</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select room" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {rooms.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="day"
+                            rules={{ required: "Day is required." }}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Day</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a day" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {days.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="time"
+                            rules={{ required: "Time is required." }}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Time</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a time slot" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {timeSlots.sort().map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <Label>Room</Label>
+                            <Input value={scheduleEntry.room} readOnly disabled />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Day</Label>
+                            <Input value={scheduleEntry.day} readOnly disabled />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Time</Label>
+                            <Input value={scheduleEntry.time} readOnly disabled />
+                        </div>
+                    </div>
+                )}
                 <FormField
                     control={form.control}
                     name="subject"
@@ -180,9 +212,25 @@ export function EditScheduleModal({ isOpen, onOpenChange, scheduleEntry }: EditS
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Subject</FormLabel>
-                            <FormControl>
-                                <Input placeholder="e.g., Quantum Physics or Break" {...field} disabled={isBreak} />
-                            </FormControl>
+                            {isBreak ? (
+                                <FormControl>
+                                    <Input {...field} disabled />
+                                </FormControl>
+                            ) : (
+                                <Select onValueChange={(value) => {
+                                    field.onChange(value);
+                                    form.setValue('faculty', '');
+                                }} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a subject" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {subjects.map(s => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            )}
                             <FormMessage />
                         </FormItem>
                     )}
@@ -193,9 +241,16 @@ export function EditScheduleModal({ isOpen, onOpenChange, scheduleEntry }: EditS
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Faculty</FormLabel>
-                            <FormControl>
-                                <Input placeholder="e.g., Dr. Evelyn Reed" {...field} disabled={isBreak} />
-                            </FormControl>
+                             <Select onValueChange={field.onChange} value={field.value} disabled={isBreak || !selectedSubjectName}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a faculty member" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {availableFaculty.map(f => <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                             <FormMessage />
                         </FormItem>
                     )}
