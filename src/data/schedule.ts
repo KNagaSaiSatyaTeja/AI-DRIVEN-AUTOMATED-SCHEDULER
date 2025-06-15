@@ -33,9 +33,9 @@ export const getUniqueRooms = () => {
 
 // --- New Timetable Configuration Types ---
 
-export type ConfigDay = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY';
+export const configDays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'] as const;
 
-export const configDays: ConfigDay[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+export type ConfigDay = (typeof configDays)[number];
 
 export interface CollegeTime {
   startTime: string;
