@@ -49,13 +49,15 @@ export function EditSubjectModal({ isOpen, onOpenChange, subject, allFaculty, on
         facultyIds: [],
       });
     }
-  }, [subject, isOpen, form]);
+  }, [subject, isOpen, form.reset]);
 
   const onSubmit = (data: SubjectFormValues) => {
     onSave({
       id: subject?.id || '', // id will be set in parent
-      ...data,
-      facultyIds: data.facultyIds || []
+      name: data.name,
+      duration: data.duration,
+      no_of_classes_per_week: data.no_of_classes_per_week,
+      facultyIds: data.facultyIds || [],
     });
   };
 
