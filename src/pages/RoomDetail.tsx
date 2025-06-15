@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { days, ScheduleEntry } from '@/data/schedule';
@@ -96,6 +95,10 @@ export default function RoomDetail() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleGenerateTimetable = () => {
+    alert('This feature will automatically generate a timetable for this room. It is not yet implemented.');
   };
 
 
@@ -326,11 +329,14 @@ export default function RoomDetail() {
         </TabsContent>
         <TabsContent value="timetable" className="mt-4">
             <Card>
-                <CardHeader>
-                    <CardTitle>Weekly Schedule</CardTitle>
-                    <CardDescription>
-                        Admins can click on a slot to add or edit an entry.
-                    </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Weekly Schedule</CardTitle>
+                        <CardDescription>
+                            Admins can click on a slot to add or edit an entry.
+                        </CardDescription>
+                    </div>
+                    {isAdmin && <Button size="sm" onClick={handleGenerateTimetable}>Generate Timetable</Button>}
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
