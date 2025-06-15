@@ -13,7 +13,7 @@ const AppRoutes = () => (
   <Layout>
     <Routes>
       <Route path="/" element={<Dashboard />} />
-      <Route path="/faculty" element={<Faculty />} />
+      <Route path="/users" element={<Faculty />} />
       <Route path="/rooms" element={<Rooms />} />
       <Route path="/rooms/:roomId" element={<RoomDetail />} />
       <Route path="*" element={<NotFound />} />

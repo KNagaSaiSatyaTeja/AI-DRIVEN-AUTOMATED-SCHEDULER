@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Calendar },
-  { name: 'Faculty', href: '/faculty', icon: User },
+  { name: 'Users', href: '/users', icon: User },
 ];
 
 export function Sidebar() {
