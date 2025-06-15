@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { days, ScheduleEntry } from '@/data/schedule';
+import { days as originalDays, ScheduleEntry, TimetableConfig, configDays, CollegeTime, BreakConfig, SubjectConfig, FacultyConfig } from '@/data/schedule';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -8,28 +8,41 @@ import { useApp } from '@/context/AppContext';
 import { cn } from '@/lib/utils';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { EditScheduleModal } from '@/components/EditScheduleModal';
-import { EditTimeSlotModal } from '@/components/EditTimeSlotModal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
-  const { role, schedule, timeSlots, deleteTimeSlot } = useApp();
+  // Keep using context for role and the original schedule for the timetable view
+  const { role, schedule, timeSlots } = useApp();
   const isAdmin = role === 'admin';
   const { toast } = useToast();
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null);
+  // The new configuration state, managed locally on this page.
+  const [config, setConfig] = useState<TimetableConfig>({
+    collegeTime: { startTime: "09:00", endTime: "17:00" },
+    breaks: [{ id: 'b1', day: 'ALL_DAYS', startTime: '13:00', endTime: '14:00' }],
+    rooms: ['A-101', 'B-203', 'C-305'],
+    subjects: [
+      { id: 's1', name: 'Quantum Physics', duration: 50, no_of_classes_per_week: 3, facultyIds: ['f1'] }
+    ],
+    faculty: [
+      { id: 'f1', name: 'Dr. Evelyn Reed', availability: [{ day: 'MONDAY', startTime: '09:00', endTime: '17:00' }] }
+    ]
+  });
 
-  const [isTimingModalOpen, setIsTimingModalOpen] = useState(false);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
+  // State for modal popups to edit items
+  const [editingSubject, setEditingSubject] = useState<SubjectConfig | null>(null);
+
+  // Still needed for the existing timetable view functionality
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null);
 
   const roomSchedule = schedule.filter(entry => entry.room === roomId);
   const roomExists = schedule.some(entry => entry.room === roomId);
-  const subjects = [...new Set(roomSchedule.map(e => e.subject).filter(s => s && s !== 'Break'))];
-  const faculty = [...new Set(roomSchedule.map(e => e.faculty).filter(f => f))];
-  const breaks = roomSchedule.filter(e => e.subject === 'Break');
 
   if (!roomExists) {
     return (
@@ -45,62 +58,35 @@ export default function RoomDetail() {
     );
   }
 
+  // Handlers for the original timetable view
   const handleEditClick = (entry: ScheduleEntry) => {
     setSelectedEntry(entry);
-    setIsModalOpen(true);
+    setIsEditModalOpen(true);
   };
-  
   const handleAddFromTimetable = (day: string, time: string) => {
-    const newEntry: ScheduleEntry = {
-        day,
-        time,
-        room: roomId || '',
-        subject: '',
-        faculty: '',
-        class: ''
-    };
+    const newEntry: ScheduleEntry = { day, time, room: roomId || '', subject: '', faculty: '', class: '' };
     setSelectedEntry(newEntry);
-    setIsModalOpen(true);
+    setIsEditModalOpen(true);
+  };
+
+  // Handler for generating timetable (placeholder)
+  const handleGenerateTimetable = () => {
+    alert('This feature will automatically generate a timetable based on the new configuration. It is not yet implemented.');
+  };
+
+  // Handlers for the new config forms
+  const handleCollegeTimeChange = (field: keyof CollegeTime, value: string) => {
+    setConfig(prev => ({ ...prev, collegeTime: { ...prev.collegeTime, [field]: value } }));
+  };
+
+  const handleAddBreak = () => {
+    const newBreak: BreakConfig = { id: `b${Date.now()}`, day: 'ALL_DAYS', startTime: '12:00', endTime: '13:00' };
+    setConfig(prev => ({...prev, breaks: [...prev.breaks, newBreak] }));
   }
 
-  const handleAddNew = (type: 'session' | 'break') => {
-    const newEntry: ScheduleEntry = {
-        day: '',
-        time: '',
-        room: roomId || '',
-        subject: type === 'break' ? 'Break' : '',
-        faculty: '',
-        class: '',
-    };
-    setSelectedEntry(newEntry);
-    setIsModalOpen(true);
-  };
-
-  const handleEditTimeSlotClick = (slot: string) => {
-    setSelectedTimeSlot(slot);
-    setIsTimingModalOpen(true);
-  };
-  
-  const handleAddTimeSlotClick = () => {
-    setSelectedTimeSlot(null);
-    setIsTimingModalOpen(true);
-  };
-  
-  const handleDeleteTimeSlot = (slot: string) => {
-    if (window.confirm(`Are you sure you want to delete the time slot "${slot}"? This will also remove all scheduled classes in this slot.`)) {
-      deleteTimeSlot(slot);
-      toast({
-        title: "Time Slot Deleted",
-        description: `The time slot ${slot} and all associated classes have been removed.`,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleGenerateTimetable = () => {
-    alert('This feature will automatically generate a timetable for this room. It is not yet implemented.');
-  };
-
+  const handleDeleteBreak = (id: string) => {
+    setConfig(prev => ({...prev, breaks: prev.breaks.filter(b => b.id !== id)}));
+  }
 
   return (
     <div className="space-y-6">
@@ -112,6 +98,7 @@ export default function RoomDetail() {
                 </Link>
             </Button>
             <h1 className="text-2xl font-bold">Room: {roomId}</h1>
+            <p className="text-muted-foreground">Manage configuration or view the current schedule for this room.</p>
         </div>
       </div>
       
@@ -123,217 +110,103 @@ export default function RoomDetail() {
             <TabsTrigger value="timings">Timings</TabsTrigger>
             <TabsTrigger value="timetable">Timetable</TabsTrigger>
         </TabsList>
+
         <TabsContent value="subjects" className="mt-4">
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>Subjects Taught in Room {roomId}</CardTitle>
-                        <CardDescription>Click edit to modify a specific class session.</CardDescription>
-                    </div>
-                    {isAdmin && (
-                        <Button size="sm" onClick={() => handleAddNew('session')}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Session
-                        </Button>
-                    )}
+                <CardHeader>
+                    <CardTitle>Manage Subjects</CardTitle>
+                    <CardDescription>Add or edit subjects for the college.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {subjects.length > 0 ? (
-                        <div className="space-y-6">
-                            {subjects.map(subject => (
-                              <div key={subject}>
-                                <h4 className="font-semibold mb-2 border-b pb-2">{subject}</h4>
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Day</TableHead>
-                                      <TableHead>Time</TableHead>
-                                      <TableHead>Faculty</TableHead>
-                                      <TableHead>Class</TableHead>
-                                      {isAdmin && <TableHead className="w-10"></TableHead>}
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {roomSchedule.filter(e => e.subject === subject).map(entry => (
-                                      <TableRow key={`${entry.day}-${entry.time}-${entry.faculty}`}>
-                                        <TableCell>{entry.day}</TableCell>
-                                        <TableCell>{entry.time}</TableCell>
-                                        <TableCell>{entry.faculty}</TableCell>
-                                        <TableCell>{entry.class}</TableCell>
-                                        {isAdmin && (
-                                          <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(entry)}>
-                                              <Edit className="h-4 w-4" />
-                                            </Button>
-                                          </TableCell>
-                                        )}
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-muted-foreground">No subjects are taught in this room.</p>
-                    )}
+                    <p className="text-destructive text-sm p-4 bg-destructive/10 rounded-md">Note: This form is a work in progress. Editing and adding subjects will be fully implemented soon.</p>
                 </CardContent>
             </Card>
         </TabsContent>
+
         <TabsContent value="faculty" className="mt-4">
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>Faculty in Room {roomId}</CardTitle>
-                        <CardDescription>Click edit to modify a specific class session.</CardDescription>
-                    </div>
-                    {isAdmin && (
-                        <Button size="sm" onClick={() => handleAddNew('session')}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Session
-                        </Button>
-                    )}
+                <CardHeader>
+                    <CardTitle>Manage Faculty</CardTitle>
+                    <CardDescription>Add or edit faculty and their availability.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {faculty.length > 0 ? (
-                        <div className="space-y-6">
-                            {faculty.map(f => (
-                              <div key={f}>
-                                <h4 className="font-semibold mb-2 border-b pb-2">{f}</h4>
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>Day</TableHead>
-                                      <TableHead>Time</TableHead>
-                                      <TableHead>Subject</TableHead>
-                                      <TableHead>Class</TableHead>
-                                      {isAdmin && <TableHead className="w-10"></TableHead>}
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {roomSchedule.filter(e => e.faculty === f).map(entry => (
-                                      <TableRow key={`${entry.day}-${entry.time}-${entry.subject}`}>
-                                        <TableCell>{entry.day}</TableCell>
-                                        <TableCell>{entry.time}</TableCell>
-                                        <TableCell>{entry.subject}</TableCell>
-                                        <TableCell>{entry.class}</TableCell>
-                                        {isAdmin && (
-                                          <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(entry)}>
-                                              <Edit className="h-4 w-4" />
-                                            </Button>
-                                          </TableCell>
-                                        )}
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-muted-foreground">No faculty are associated with this room.</p>
-                    )}
+                    <p className="text-destructive text-sm p-4 bg-destructive/10 rounded-md">Note: This form is a work in progress. Editing and adding faculty will be fully implemented soon.</p>
                 </CardContent>
             </Card>
         </TabsContent>
+
         <TabsContent value="breaks" className="mt-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Scheduled Breaks in Room {roomId}</CardTitle>
-                        <CardDescription>Click edit to modify or delete a break.</CardDescription>
+                        <CardTitle>Manage Breaks</CardTitle>
+                        <CardDescription>Define college-wide break times.</CardDescription>
                     </div>
-                    {isAdmin && (
-                        <Button size="sm" onClick={() => handleAddNew('break')}>
-                            <Plus className="mr-2 h-4 w-4" /> Add Break
-                        </Button>
-                    )}
+                    {isAdmin && <Button size="sm" onClick={handleAddBreak}><Plus className="mr-2"/> Add Break</Button>}
                 </CardHeader>
                 <CardContent>
-                    {breaks.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Day</TableHead>
-                                    <TableHead>Time</TableHead>
-                                    {isAdmin && <TableHead className="w-[100px] text-right">Actions</TableHead>}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {breaks.map((b, i) => (
-                                    <TableRow key={`${b.day}-${b.time}-${i}`}>
-                                        <TableCell>{b.day}</TableCell>
-                                        <TableCell>{b.time}</TableCell>
-                                        {isAdmin && (
-                                          <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(b)}>
-                                              <Edit className="h-4 w-4" />
-                                            </Button>
-                                          </TableCell>
-                                        )}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <p className="text-muted-foreground">No breaks are scheduled in this room.</p>
-                    )}
+                    <div className="space-y-4">
+                        {config.breaks.map((breakItem, index) => (
+                            <div key={breakItem.id} className="flex items-center gap-4 p-2 border rounded-lg">
+                                <Select defaultValue={breakItem.day} onValueChange={(value) => {
+                                    const newBreaks = [...config.breaks];
+                                    newBreaks[index].day = value as 'ALL_DAYS' | ConfigDay;
+                                    setConfig(prev => ({...prev, breaks: newBreaks}));
+                                }}>
+                                    <SelectTrigger className="w-[180px]">
+                                        <SelectValue placeholder="Select day" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL_DAYS">All Days</SelectItem>
+                                        {configDays.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <Input type="time" value={breakItem.startTime} onChange={(e) => {
+                                     const newBreaks = [...config.breaks];
+                                     newBreaks[index].startTime = e.target.value;
+                                     setConfig(prev => ({...prev, breaks: newBreaks}));
+                                }}/>
+                                <Input type="time" value={breakItem.endTime} onChange={(e) => {
+                                     const newBreaks = [...config.breaks];
+                                     newBreaks[index].endTime = e.target.value;
+                                     setConfig(prev => ({...prev, breaks: newBreaks}));
+                                }}/>
+                                <Button variant="ghost" size="icon" onClick={() => handleDeleteBreak(breakItem.id)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
                 </CardContent>
             </Card>
         </TabsContent>
+
         <TabsContent value="timings" className="mt-4">
             <Card>
-                <CardHeader className="flex-row items-center justify-between">
-                  <div>
+                <CardHeader>
                     <CardTitle>College Timings</CardTitle>
-                    <CardDescription>Available time slots for scheduling classes.</CardDescription>
-                  </div>
-                  {isAdmin && (
-                    <Button size="sm" onClick={handleAddTimeSlotClick}>
-                      <Plus className="mr-2 h-4 w-4" /> Add Time Slot
-                    </Button>
-                  )}
+                    <CardDescription>Set the official start and end times for the college day.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Start Time</TableHead>
-                            <TableHead>End Time</TableHead>
-                            {isAdmin && <TableHead className="w-[120px] text-right">Actions</TableHead>}
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {timeSlots.map(slot => {
-                            const [start, end] = slot.split(' - ');
-                            return (
-                                <TableRow key={slot}>
-                                    <TableCell>{start || 'N/A'}</TableCell>
-                                    <TableCell>{end || 'N/A'}</TableCell>
-                                    {isAdmin && (
-                                        <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => handleEditTimeSlotClick(slot)}>
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteTimeSlot(slot)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </TableCell>
-                                    )}
-                                </TableRow>
-                            )
-                        })}
-                    </TableBody>
-                  </Table>
+                <CardContent className="flex gap-4">
+                    <div className="w-full space-y-2">
+                        <Label htmlFor="startTime">Start Time</Label>
+                        <Input id="startTime" type="time" value={config.collegeTime.startTime} onChange={(e) => handleCollegeTimeChange('startTime', e.target.value)} />
+                    </div>
+                    <div className="w-full space-y-2">
+                        <Label htmlFor="endTime">End Time</Label>
+                        <Input id="endTime" type="time" value={config.collegeTime.endTime} onChange={(e) => handleCollegeTimeChange('endTime', e.target.value)} />
+                    </div>
                 </CardContent>
             </Card>
         </TabsContent>
+
         <TabsContent value="timetable" className="mt-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                         <CardTitle>Weekly Schedule</CardTitle>
                         <CardDescription>
-                            Admins can click on a slot to add or edit an entry.
+                            This is the current, active timetable. Generate a new one based on your configuration.
                         </CardDescription>
                     </div>
                     {isAdmin && <Button size="sm" onClick={handleGenerateTimetable}>Generate Timetable</Button>}
@@ -344,14 +217,14 @@ export default function RoomDetail() {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-[120px]">Time</TableHead>
-                          {days.map(day => <TableHead key={day}>{day}</TableHead>)}
+                          {originalDays.map(day => <TableHead key={day}>{day}</TableHead>)}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {timeSlots.map(timeSlot => (
                           <TableRow key={timeSlot}>
                             <TableCell className="font-medium text-muted-foreground">{timeSlot}</TableCell>
-                            {days.map(day => {
+                            {originalDays.map(day => {
                               const entry = roomSchedule.find(s => s.day === day && s.time === timeSlot);
                               const isBreak = entry?.subject === 'Break';
 
@@ -395,16 +268,9 @@ export default function RoomDetail() {
 
       {selectedEntry && (
         <EditScheduleModal
-          isOpen={isModalOpen}
-          onOpenChange={setIsModalOpen}
+          isOpen={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
           scheduleEntry={selectedEntry}
-        />
-      )}
-      {isAdmin && (
-        <EditTimeSlotModal
-            isOpen={isTimingModalOpen}
-            onOpenChange={setIsTimingModalOpen}
-            timeSlot={selectedTimeSlot}
         />
       )}
     </div>

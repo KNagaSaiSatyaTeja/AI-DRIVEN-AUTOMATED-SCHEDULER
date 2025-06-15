@@ -29,3 +29,50 @@ export const getUniqueRooms = () => {
     const rooms = new Set(scheduleData.map(entry => entry.room));
     return Array.from(rooms).sort();
 }
+
+
+// --- New Timetable Configuration Types ---
+
+export type ConfigDay = 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY';
+
+export const configDays: ConfigDay[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'];
+
+export interface CollegeTime {
+  startTime: string;
+  endTime: string;
+}
+
+export interface BreakConfig {
+  id: string;
+  day: 'ALL_DAYS' | ConfigDay;
+  startTime: string;
+  endTime: string;
+}
+
+export interface FacultyAvailability {
+  day: ConfigDay;
+  startTime: string;
+  endTime: string;
+}
+
+export interface FacultyConfig {
+  id: string;
+  name: string;
+  availability: FacultyAvailability[];
+}
+
+export interface SubjectConfig {
+  id:string;
+  name: string;
+  duration: number; // in minutes
+  no_of_classes_per_week: number;
+  facultyIds: string[];
+}
+
+export interface TimetableConfig {
+  collegeTime: CollegeTime;
+  breaks: BreakConfig[];
+  rooms: string[];
+  subjects: SubjectConfig[];
+  faculty: FacultyConfig[];
+}
