@@ -58,13 +58,25 @@ export function EditScheduleModal({ isOpen, onOpenChange, scheduleEntry }: EditS
         onOpenChange(false);
     };
 
+    const onMarkAsBreak = () => {
+        form.reset({
+            ...scheduleEntry,
+            subject: 'Break',
+            faculty: '',
+            class: '',
+        });
+    }
+
+    const isBreak = form.watch('subject') === 'Break';
+    const isNewEntry = !scheduleEntry.subject;
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Schedule</DialogTitle>
+          <DialogTitle>{isNewEntry && !isBreak ? "Add Schedule Entry" : "Edit Schedule"}</DialogTitle>
           <DialogDescription>
-            Modify the details for this time slot in Room {scheduleEntry.room}.
+            {isNewEntry && !isBreak ? `Add a new entry for ${scheduleEntry.room} at ${scheduleEntry.time} on ${scheduleEntry.day}.` : `Modify the details for this time slot in Room ${scheduleEntry.room}.`}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -86,7 +98,7 @@ export function EditScheduleModal({ isOpen, onOpenChange, scheduleEntry }: EditS
                         <FormItem>
                             <FormLabel>Subject</FormLabel>
                             <FormControl>
-                                <Input placeholder="e.g., Quantum Physics" {...field} />
+                                <Input placeholder="e.g., Quantum Physics or Break" {...field} disabled={isBreak} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -99,7 +111,7 @@ export function EditScheduleModal({ isOpen, onOpenChange, scheduleEntry }: EditS
                         <FormItem>
                             <FormLabel>Faculty</FormLabel>
                             <FormControl>
-                                <Input placeholder="e.g., Dr. Evelyn Reed" {...field} />
+                                <Input placeholder="e.g., Dr. Evelyn Reed" {...field} disabled={isBreak} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -112,14 +124,17 @@ export function EditScheduleModal({ isOpen, onOpenChange, scheduleEntry }: EditS
                         <FormItem>
                             <FormLabel>Class</FormLabel>
                             <FormControl>
-                                <Input placeholder="e.g., MSc Physics" {...field} />
+                                <Input placeholder="e.g., MSc Physics" {...field} disabled={isBreak} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
-                <DialogFooter className="sm:justify-between pt-4">
-                    <Button type="button" variant="destructive" onClick={onDelete}>Delete Entry</Button>
+                <DialogFooter className="sm:justify-between pt-4 flex-wrap gap-2">
+                    <div className="flex gap-2">
+                        <Button type="button" variant="destructive" onClick={onDelete}>Delete</Button>
+                        <Button type="button" variant="secondary" onClick={onMarkAsBreak}>Mark as Break</Button>
+                    </div>
                     <div className="flex space-x-2">
                          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
                         <Button type="submit">Save Changes</Button>

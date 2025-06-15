@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { scheduleData, days, timeSlots, ScheduleEntry } from '@/data/schedule';
@@ -80,12 +79,22 @@ export default function RoomDetail() {
               <TableBody>
                 {timeSlots.map(timeSlot => (
                   <TableRow key={timeSlot}>
-                    <TableCell className="font-medium text-muted-foreground">{timeSlot === '12:00 - 01:00' ? 'Lunch Break' : timeSlot}</TableCell>
+                    <TableCell className="font-medium text-muted-foreground">{timeSlot}</TableCell>
                     {days.map(day => {
-                      if (timeSlot === '12:00 - 01:00') {
-                        return <TableCell key={day} className="bg-muted/50 text-center text-xs italic">Break</TableCell>;
-                      }
                       const entry = roomSchedule.find(s => s.day === day && s.time === timeSlot);
+                      const isBreak = entry?.subject === 'Break';
+
+                      if (isBreak) {
+                        return (
+                            <TableCell key={day} className={cn('relative h-24 bg-muted/50', isAdmin ? "cursor-pointer hover:bg-accent" : "")} onClick={() => isAdmin && entry && handleEditClick(entry)}>
+                                <div className="flex items-center justify-center h-full text-sm font-medium text-muted-foreground">
+                                    Break
+                                </div>
+                                {isAdmin && <div className="absolute top-1 right-1 p-1 rounded-full hover:bg-background"><Edit className="h-3 w-3 text-muted-foreground"/></div>}
+                            </TableCell>
+                        )
+                      }
+                      
                       return (
                         <TableCell key={day} className={cn('relative h-24', isAdmin ? "cursor-pointer hover:bg-accent" : "")} onClick={() => isAdmin && (entry ? handleEditClick(entry) : handleAddClick(day, timeSlot))}>
                           {entry ? (

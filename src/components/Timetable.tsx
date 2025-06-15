@@ -12,7 +12,7 @@ export function Timetable() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Weekly Timetable</CardTitle>
+        <CardTitle>Weekly Timetable Overview</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -26,12 +26,25 @@ export function Timetable() {
             <TableBody>
               {timeSlots.map(timeSlot => (
                 <TableRow key={timeSlot}>
-                  <TableCell className="font-medium text-muted-foreground">{timeSlot === '12:00 - 01:00' ? 'Lunch Break' : timeSlot}</TableCell>
+                  <TableCell className="font-medium text-muted-foreground">{timeSlot}</TableCell>
                   {days.map(day => {
-                    if (timeSlot === '12:00 - 01:00') {
-                        return <TableCell key={day} className="bg-muted/50"></TableCell>
+                    const entries = scheduleData.filter(s => s.day === day && s.time === timeSlot);
+                    
+                    if (entries.length === 0) {
+                        return <TableCell key={day}></TableCell>
                     }
-                    const entry = scheduleData.find(s => s.day === day && s.time === timeSlot);
+
+                    if (entries.length > 1) {
+                        return <TableCell key={day}><Badge variant="destructive">Clash</Badge></TableCell>
+                    }
+
+                    const entry = entries[0];
+                    const isBreak = entry.subject === 'Break';
+
+                    if (isBreak) {
+                        return <TableCell key={day} className="bg-muted/50 text-center text-xs italic">Break in {entry.room}</TableCell>
+                    }
+                    
                     return (
                       <TableCell key={day} className={cn(isAdmin && entry && "cursor-pointer hover:bg-accent")}>
                         {entry ? (
