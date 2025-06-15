@@ -1,10 +1,11 @@
 
 import { NavLink } from 'react-router-dom';
-import { Calendar, Bot } from 'lucide-react';
+import { Calendar, Bot, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Calendar },
+  { name: 'Faculty', href: '/faculty', icon: User },
 ];
 
 export function Sidebar() {
@@ -20,7 +21,7 @@ export function Sidebar() {
             <NavLink
               key={item.name}
               to={item.href}
-              end
+              end={item.href === '/'}
               className={({ isActive }) =>
                 cn(
                   'group flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer',
