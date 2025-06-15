@@ -2,7 +2,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import Dashboard from "./Dashboard";
-import Faculty from "./Faculty";
+import Users from "./Users";
 import NotFound from "./NotFound";
 import Rooms from "./Rooms";
 import RoomDetail from "./RoomDetail";
@@ -13,7 +13,7 @@ const AppRoutes = () => (
   <Layout>
     <Routes>
       <Route path="/" element={<Dashboard />} />
-      <Route path="/users" element={<Faculty />} />
+      <Route path="/users" element={<Users />} />
       <Route path="/rooms" element={<Rooms />} />
       <Route path="/rooms/:roomId" element={<RoomDetail />} />
       <Route path="*" element={<NotFound />} />
