@@ -106,14 +106,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             Object.keys(scheduleDays).forEach(dayKey => {
                 const dayEntries = scheduleDays[dayKey];
                 dayEntries.forEach(entry => {
-                    transformedSchedule.push({
-                        day: capitalize(entry.day),
-                        time: `${entry.startTime} - ${entry.endTime}`,
-                        room: entry.room_id,
-                        subject: entry.subject_name,
-                        faculty: entry.faculty_name,
-                        class: 'TBD' 
-                    });
+                    // This check prevents the error when an entry is null.
+                    if (entry) {
+                        transformedSchedule.push({
+                            day: capitalize(entry.day),
+                            time: `${entry.startTime} - ${entry.endTime}`,
+                            room: entry.room_id,
+                            subject: entry.subject_name,
+                            faculty: entry.faculty_name,
+                            class: 'TBD' 
+                        });
+                    }
                 });
             });
         }
