@@ -22,6 +22,7 @@ import {
   } from "@/components/ui/form"
 import { useToast } from "@/components/ui/use-toast";
 import { useEffect } from 'react';
+import { useApp } from '@/context/AppContext';
 
 interface EditScheduleModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ interface EditScheduleModalProps {
 
 export function EditScheduleModal({ isOpen, onOpenChange, scheduleEntry }: EditScheduleModalProps) {
     const { toast } = useToast();
+    const { updateSchedule, deleteSchedule } = useApp();
     const form = useForm<ScheduleEntry>({
         defaultValues: scheduleEntry,
     });
@@ -40,20 +42,20 @@ export function EditScheduleModal({ isOpen, onOpenChange, scheduleEntry }: EditS
     }, [scheduleEntry, form]);
 
     const onSubmit = (data: ScheduleEntry) => {
-        console.log('Updated schedule data (not saved):', data);
+        updateSchedule(data);
         toast({
             title: "Schedule Updated",
-            description: `The changes for ${data.room} have been logged. Data persistence requires a backend.`,
+            description: `The changes for ${data.room} have been saved. Note: changes are not persisted on page reload.`,
         });
         onOpenChange(false);
     };
     
     const onDelete = () => {
-        console.log('Deleted schedule entry (not saved):', scheduleEntry);
+        deleteSchedule(scheduleEntry);
         toast({
             title: "Schedule Entry Deleted",
             variant: "destructive",
-            description: `The entry for ${scheduleEntry.room} has been logged for deletion.`,
+            description: `The entry for ${scheduleEntry.room} has been deleted. Note: changes are not persisted on page reload.`,
         });
         onOpenChange(false);
     };

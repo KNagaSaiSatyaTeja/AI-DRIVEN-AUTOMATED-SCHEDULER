@@ -1,5 +1,5 @@
 
-import { scheduleData } from '@/data/schedule';
+import { useApp } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,8 @@ interface RoomScheduleProps {
 }
 
 export function RoomSchedule({ roomId }: RoomScheduleProps) {
-  const roomSchedule = scheduleData.filter(entry => entry.room === roomId);
+  const { schedule } = useApp();
+  const roomSchedule = schedule.filter(entry => entry.room === roomId);
   const subjects = [...new Set(roomSchedule.map(e => e.subject).filter(s => s && s !== 'Break'))];
   const faculty = [...new Set(roomSchedule.map(e => e.faculty).filter(f => f))];
 

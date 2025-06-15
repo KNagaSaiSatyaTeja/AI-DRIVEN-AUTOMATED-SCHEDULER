@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { scheduleData, days, timeSlots, ScheduleEntry } from '@/data/schedule';
+import { days, timeSlots, ScheduleEntry } from '@/data/schedule';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -14,13 +14,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
-  const { role } = useApp();
+  const { role, schedule } = useApp();
   const isAdmin = role === 'admin';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null);
 
-  const roomSchedule = scheduleData.filter(entry => entry.room === roomId);
-  const roomExists = scheduleData.some(entry => entry.room === roomId);
+  const roomSchedule = schedule.filter(entry => entry.room === roomId);
+  const roomExists = schedule.some(entry => entry.room === roomId);
   const subjects = [...new Set(roomSchedule.map(e => e.subject).filter(s => s && s !== 'Break'))];
   const faculty = [...new Set(roomSchedule.map(e => e.faculty).filter(f => f))];
   const breaks = roomSchedule.filter(e => e.subject === 'Break');
