@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { days as originalDays, ScheduleEntry, TimetableConfig, configDays, CollegeTime, BreakConfig, SubjectConfig, FacultyConfig, ConfigDay } from '@/data/schedule';
@@ -31,7 +32,7 @@ export default function RoomDetail() {
       return {
         collegeTime: { startTime: "09:00", endTime: "17:00" },
         breaks: [{ id: 'b1', day: 'ALL_DAYS', startTime: '13:00', endTime: '14:00' }],
-        rooms: ['A-101', 'B-203', 'C-305'],
+        rooms: [roomId!],
         subjects: [
           { id: 's1', name: 'Quantum Physics', duration: 50, no_of_classes_per_week: 3, facultyIds: ['f1'] },
           { id: 's2', name: 'Data Structures', duration: 50, no_of_classes_per_week: 4, facultyIds: ['f2'] },
@@ -44,11 +45,10 @@ export default function RoomDetail() {
     }
     
     // For a new room, create a default config
-    const originalRooms = Array.from(new Set(schedule.map(s => s.room)));
     return {
       collegeTime: { startTime: "09:00", endTime: "17:00" },
       breaks: [{ id: 'b1', day: 'ALL_DAYS', startTime: '13:00', endTime: '14:00' }],
-      rooms: Array.from(new Set([...originalRooms, roomId!])),
+      rooms: [roomId!],
       subjects: [],
       faculty: []
     };
