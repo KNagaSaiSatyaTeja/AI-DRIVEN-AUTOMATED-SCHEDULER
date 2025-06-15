@@ -107,11 +107,11 @@ export default function RoomDetail() {
         </TabsList>
 
         <TabsContent value="subjects" className="mt-4">
-            <ManageSubjects config={config} setConfig={setConfig} />
+            <ManageSubjects config={config} setConfig={setConfig} isAdmin={isAdmin} />
         </TabsContent>
 
         <TabsContent value="faculty" className="mt-4">
-            <ManageFaculty config={config} setConfig={setConfig} />
+            <ManageFaculty config={config} setConfig={setConfig} isAdmin={isAdmin} />
         </TabsContent>
 
         <TabsContent value="breaks" className="mt-4">
@@ -127,7 +127,7 @@ export default function RoomDetail() {
                     <div className="space-y-4">
                         {config.breaks.map((breakItem, index) => (
                             <div key={breakItem.id} className="flex items-center gap-4 p-2 border rounded-lg">
-                                <Select defaultValue={breakItem.day} onValueChange={(value) => {
+                                <Select defaultValue={breakItem.day} disabled={!isAdmin} onValueChange={(value) => {
                                     const newBreaks = [...config.breaks];
                                     newBreaks[index].day = value as 'ALL_DAYS' | ConfigDay;
                                     setConfig(prev => ({...prev, breaks: newBreaks}));
@@ -140,19 +140,21 @@ export default function RoomDetail() {
                                         {configDays.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
-                                <Input type="time" value={breakItem.startTime} onChange={(e) => {
+                                <Input type="time" value={breakItem.startTime} readOnly={!isAdmin} onChange={(e) => {
                                      const newBreaks = [...config.breaks];
                                      newBreaks[index].startTime = e.target.value;
                                      setConfig(prev => ({...prev, breaks: newBreaks}));
                                 }}/>
-                                <Input type="time" value={breakItem.endTime} onChange={(e) => {
+                                <Input type="time" value={breakItem.endTime} readOnly={!isAdmin} onChange={(e) => {
                                      const newBreaks = [...config.breaks];
                                      newBreaks[index].endTime = e.target.value;
                                      setConfig(prev => ({...prev, breaks: newBreaks}));
                                 }}/>
-                                <Button variant="ghost" size="icon" onClick={() => handleDeleteBreak(breakItem.id)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
+                                {isAdmin && (
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteBreak(breakItem.id)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -169,11 +171,11 @@ export default function RoomDetail() {
                 <CardContent className="flex gap-4">
                     <div className="w-full space-y-2">
                         <Label htmlFor="startTime">Start Time</Label>
-                        <Input id="startTime" type="time" value={config.collegeTime.startTime} onChange={(e) => handleCollegeTimeChange('startTime', e.target.value)} />
+                        <Input id="startTime" type="time" value={config.collegeTime.startTime} readOnly={!isAdmin} onChange={(e) => handleCollegeTimeChange('startTime', e.target.value)} />
                     </div>
                     <div className="w-full space-y-2">
                         <Label htmlFor="endTime">End Time</Label>
-                        <Input id="endTime" type="time" value={config.collegeTime.endTime} onChange={(e) => handleCollegeTimeChange('endTime', e.target.value)} />
+                        <Input id="endTime" type="time" value={config.collegeTime.endTime} readOnly={!isAdmin} onChange={(e) => handleCollegeTimeChange('endTime', e.target.value)} />
                     </div>
                 </CardContent>
             </Card>

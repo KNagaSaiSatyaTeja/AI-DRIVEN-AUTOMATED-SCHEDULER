@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { TimetableConfig, FacultyConfig } from '@/data/schedule';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,9 +11,10 @@ import { EditFacultyModal } from './EditFacultyModal';
 interface ManageFacultyProps {
   config: TimetableConfig;
   setConfig: (config: TimetableConfig) => void;
+  isAdmin: boolean;
 }
 
-export function ManageFaculty({ config, setConfig }: ManageFacultyProps) {
+export function ManageFaculty({ config, setConfig, isAdmin }: ManageFacultyProps) {
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFaculty, setEditingFaculty] = useState<FacultyConfig | null>(null);
@@ -68,7 +70,7 @@ export function ManageFaculty({ config, setConfig }: ManageFacultyProps) {
             <CardTitle>Manage Faculty</CardTitle>
             <CardDescription>Add, edit, or remove faculty members.</CardDescription>
           </div>
-          <Button size="sm" onClick={handleAddFaculty}><Plus className="mr-2" /> Add Faculty</Button>
+          {isAdmin && <Button size="sm" onClick={handleAddFaculty}><Plus className="mr-2" /> Add Faculty</Button>}
         </CardHeader>
         <CardContent>
           <Table>
@@ -76,7 +78,7 @@ export function ManageFaculty({ config, setConfig }: ManageFacultyProps) {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead className="w-[40%]">Availability</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                {isAdmin && <TableHead className="text-right">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -93,18 +95,20 @@ export function ManageFaculty({ config, setConfig }: ManageFacultyProps) {
                       : <span className="text-muted-foreground italic">Not specified</span>
                     }
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEditFaculty(faculty)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteFaculty(faculty.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditFaculty(faculty)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteFaculty(faculty.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center text-muted-foreground">No faculty added yet.</TableCell>
+                  <TableCell colSpan={isAdmin ? 3 : 2} className="text-center text-muted-foreground">No faculty added yet.</TableCell>
                 </TableRow>
               )}
             </TableBody>

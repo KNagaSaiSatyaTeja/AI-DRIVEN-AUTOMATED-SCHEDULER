@@ -10,9 +10,10 @@ import { EditSubjectModal } from './EditSubjectModal';
 interface ManageSubjectsProps {
   config: TimetableConfig;
   setConfig: (config: TimetableConfig) => void;
+  isAdmin: boolean;
 }
 
-export function ManageSubjects({ config, setConfig }: ManageSubjectsProps) {
+export function ManageSubjects({ config, setConfig, isAdmin }: ManageSubjectsProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<SubjectConfig | null>(null);
 
@@ -57,7 +58,7 @@ export function ManageSubjects({ config, setConfig }: ManageSubjectsProps) {
             <CardTitle>Manage Subjects</CardTitle>
             <CardDescription>Add, edit, or remove subjects for the college.</CardDescription>
           </div>
-          <Button size="sm" onClick={handleAddSubject}><Plus className="mr-2" /> Add Subject</Button>
+          {isAdmin && <Button size="sm" onClick={handleAddSubject}><Plus className="mr-2" /> Add Subject</Button>}
         </CardHeader>
         <CardContent>
           <Table>
@@ -67,7 +68,7 @@ export function ManageSubjects({ config, setConfig }: ManageSubjectsProps) {
                 <TableHead>Duration (mins)</TableHead>
                 <TableHead>Classes/Week</TableHead>
                 <TableHead>Assigned Faculty</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                {isAdmin && <TableHead className="text-right">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -79,18 +80,20 @@ export function ManageSubjects({ config, setConfig }: ManageSubjectsProps) {
                   <TableCell>
                     {subject.facultyIds.map(fid => config.faculty.find(f => f.id === fid)?.name).filter(Boolean).join(', ') || 'None'}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEditSubject(subject)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteSubject(subject.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => handleEditSubject(subject)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteSubject(subject.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               )) : (
                 <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground">No subjects added yet.</TableCell>
+                    <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground">No subjects added yet.</TableCell>
                 </TableRow>
               )}
             </TableBody>
