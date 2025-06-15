@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ManageSubjects } from '@/components/ManageSubjects';
 import { ManageFaculty } from '@/components/ManageFaculty';
 import { useToast } from '@/components/ui/use-toast';
+import { GenerateTimetableModal } from '@/components/GenerateTimetableModal';
 
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -36,6 +37,7 @@ export default function RoomDetail() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null);
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
 
   const roomSchedule = schedule.filter(entry => entry.room === roomId);
   const roomExists = schedule.some(entry => entry.room === roomId);
@@ -65,14 +67,18 @@ export default function RoomDetail() {
     setIsEditModalOpen(true);
   };
 
-  // Handler for generating timetable (placeholder)
-  const handleGenerateTimetable = () => {
+  const handleGenerateClick = () => {
+    setIsGenerateModalOpen(true);
+  };
+
+  const handleConfirmGenerate = () => {
     const result = generateSchedule(config);
     toast({
         title: result.success ? "Timetable Generated" : "Generation Issue",
         description: result.message,
         variant: result.success ? "default" : "destructive",
     });
+    setIsGenerateModalOpen(false);
   };
 
   // Handlers for the new config forms
@@ -196,7 +202,7 @@ export default function RoomDetail() {
                             This is the current, active timetable. Generate a new one based on your configuration.
                         </CardDescription>
                     </div>
-                    {isAdmin && <Button size="sm" onClick={handleGenerateTimetable}>{schedule.filter(e => e.room === roomId && e.subject !== 'Break').length > 0 ? 'Generate New Timetable' : 'Generate Timetable'}</Button>}
+                    {isAdmin && <Button size="sm" onClick={handleGenerateClick}>{schedule.filter(e => e.room === roomId && e.subject !== 'Break').length > 0 ? 'Generate New Timetable' : 'Generate Timetable'}</Button>}
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
@@ -252,6 +258,13 @@ export default function RoomDetail() {
             </Card>
         </TabsContent>
       </Tabs>
+
+      <GenerateTimetableModal
+        isOpen={isGenerateModalOpen}
+        onOpenChange={setIsGenerateModalOpen}
+        config={config}
+        onConfirmGenerate={handleConfirmGenerate}
+      />
 
       {selectedEntry && (
         <EditScheduleModal
