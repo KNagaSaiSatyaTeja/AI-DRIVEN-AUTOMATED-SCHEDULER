@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { days, ScheduleEntry } from '@/data/schedule';
@@ -50,7 +51,7 @@ export default function RoomDetail() {
     setIsModalOpen(true);
   };
   
-  const handleAddClick = (day: string, time: string) => {
+  const handleAddFromTimetable = (day: string, time: string) => {
     const newEntry: ScheduleEntry = {
         day,
         time,
@@ -62,6 +63,19 @@ export default function RoomDetail() {
     setSelectedEntry(newEntry);
     setIsModalOpen(true);
   }
+
+  const handleAddNew = (type: 'session' | 'break') => {
+    const newEntry: ScheduleEntry = {
+        day: '',
+        time: '',
+        room: roomId || '',
+        subject: type === 'break' ? 'Break' : '',
+        faculty: '',
+        class: '',
+    };
+    setSelectedEntry(newEntry);
+    setIsModalOpen(true);
+  };
 
   const handleEditTimeSlotClick = (slot: string) => {
     setSelectedTimeSlot(slot);
@@ -108,9 +122,16 @@ export default function RoomDetail() {
         </TabsList>
         <TabsContent value="subjects" className="mt-4">
             <Card>
-                <CardHeader>
-                    <CardTitle>Subjects Taught in Room {roomId}</CardTitle>
-                    <CardDescription>Click edit to modify a specific class session.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Subjects Taught in Room {roomId}</CardTitle>
+                        <CardDescription>Click edit to modify a specific class session.</CardDescription>
+                    </div>
+                    {isAdmin && (
+                        <Button size="sm" onClick={() => handleAddNew('session')}>
+                            <Plus className="mr-2 h-4 w-4" /> Add Session
+                        </Button>
+                    )}
                 </CardHeader>
                 <CardContent>
                     {subjects.length > 0 ? (
@@ -157,9 +178,16 @@ export default function RoomDetail() {
         </TabsContent>
         <TabsContent value="faculty" className="mt-4">
             <Card>
-                <CardHeader>
-                    <CardTitle>Faculty in Room {roomId}</CardTitle>
-                    <CardDescription>Click edit to modify a specific class session.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Faculty in Room {roomId}</CardTitle>
+                        <CardDescription>Click edit to modify a specific class session.</CardDescription>
+                    </div>
+                    {isAdmin && (
+                        <Button size="sm" onClick={() => handleAddNew('session')}>
+                            <Plus className="mr-2 h-4 w-4" /> Add Session
+                        </Button>
+                    )}
                 </CardHeader>
                 <CardContent>
                     {faculty.length > 0 ? (
@@ -206,9 +234,16 @@ export default function RoomDetail() {
         </TabsContent>
         <TabsContent value="breaks" className="mt-4">
             <Card>
-                <CardHeader>
-                    <CardTitle>Scheduled Breaks in Room {roomId}</CardTitle>
-                    <CardDescription>Click edit to modify or delete a break.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Scheduled Breaks in Room {roomId}</CardTitle>
+                        <CardDescription>Click edit to modify or delete a break.</CardDescription>
+                    </div>
+                    {isAdmin && (
+                        <Button size="sm" onClick={() => handleAddNew('break')}>
+                            <Plus className="mr-2 h-4 w-4" /> Add Break
+                        </Button>
+                    )}
                 </CardHeader>
                 <CardContent>
                     {breaks.length > 0 ? (
@@ -326,7 +361,7 @@ export default function RoomDetail() {
                               }
                               
                               return (
-                                <TableCell key={day} className={cn('relative h-24', isAdmin ? "cursor-pointer hover:bg-accent" : "")} onClick={() => isAdmin && (entry ? handleEditClick(entry) : handleAddClick(day, timeSlot))}>
+                                <TableCell key={day} className={cn('relative h-24', isAdmin ? "cursor-pointer hover:bg-accent" : "")} onClick={() => isAdmin && (entry ? handleEditClick(entry) : handleAddFromTimetable(day, timeSlot))}>
                                   {entry ? (
                                     <div className="flex flex-col gap-1 text-sm">
                                       <p className="font-semibold">{entry.subject}</p>
@@ -336,7 +371,7 @@ export default function RoomDetail() {
                                     </div>
                                   ) : (isAdmin && 
                                     <div className="flex items-center justify-center h-full text-muted-foreground/50">
-                                        <Edit className="h-4 w-4"/>
+                                        <Plus className="h-4 w-4"/>
                                     </div>
                                   )}
                                 </TableCell>
