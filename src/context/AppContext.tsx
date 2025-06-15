@@ -4,8 +4,9 @@ import { ScheduleEntry, scheduleData as initialScheduleData, initialTimeSlots, T
 type Role = 'admin' | 'user';
 
 interface AppContextType {
-  role: Role;
-  setRole: (role: Role) => void;
+  role: Role | null;
+  setRole: (role: Role | null) => void;
+  logout: () => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   schedule: ScheduleEntry[];
@@ -21,10 +22,14 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [role, setRole] = useState<Role>('admin');
+  const [role, setRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>(initialScheduleData);
   const [timeSlots, setTimeSlots] = useState<string[]>(initialTimeSlots);
+
+  const logout = () => {
+    setRole(null);
+  };
 
   const updateSchedule = (entryToUpdate: ScheduleEntry) => {
     setSchedule(currentSchedule => {
@@ -174,7 +179,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return { success: true, message: 'New timetable generated successfully!' };
   };
 
-  const value = { role, setRole, isLoading, setIsLoading, schedule, updateSchedule, deleteSchedule, timeSlots, addTimeSlot, updateTimeSlot, deleteTimeSlot, generateSchedule };
+  const value = { role, setRole, logout, isLoading, setIsLoading, schedule, updateSchedule, deleteSchedule, timeSlots, addTimeSlot, updateTimeSlot, deleteTimeSlot, generateSchedule };
 
   return (
     <AppContext.Provider value={value}>

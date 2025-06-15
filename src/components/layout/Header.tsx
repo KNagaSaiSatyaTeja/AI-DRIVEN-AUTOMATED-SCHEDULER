@@ -1,7 +1,5 @@
 
 import { useApp } from '@/context/AppContext';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -13,10 +11,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
+import { useNavigate } from 'react-router-dom';
 
 export function Header() {
-  const { role, setRole } = useApp();
+  const { role, logout } = useApp();
   const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <header className="flex-shrink-0 bg-card border-b border-border">
@@ -25,21 +30,6 @@ export function Header() {
           {/* Mobile menu button could go here */}
         </div>
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="role-switch" className="text-sm font-medium text-muted-foreground">
-              User
-            </Label>
-            <Switch
-              id="role-switch"
-              checked={role === 'admin'}
-              onCheckedChange={(checked) => setRole(checked ? 'admin' : 'user')}
-              className="cursor-pointer"
-            />
-            <Label htmlFor="role-switch" className="text-sm font-medium">
-              Admin
-            </Label>
-          </div>
-          
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="p-2 rounded-full hover:bg-accent cursor-pointer"
@@ -52,8 +42,8 @@ export function Header() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Avatar className="h-9 w-9 cursor-pointer">
-                <AvatarImage src={`https://avatar.vercel.sh/${role}.png`} alt={role} />
-                <AvatarFallback>{role.charAt(0).toUpperCase()}</AvatarFallback>
+                <AvatarImage src={`https://avatar.vercel.sh/${role}.png`} alt={role || ''} />
+                <AvatarFallback>{role ? role.charAt(0).toUpperCase() : '?'}</AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -62,7 +52,7 @@ export function Header() {
               <DropdownMenuItem className="cursor-pointer">Profile</DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer">Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer">Logout</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
