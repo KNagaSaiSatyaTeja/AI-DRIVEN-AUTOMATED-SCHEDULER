@@ -14,16 +14,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Loader2 } from 'lucide-react';
 
 interface GenerateTimetableModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   config: TimetableConfig;
   onConfirmGenerate: (payload: any) => void;
+  isLoading: boolean;
 }
 
-export function GenerateTimetableModal({ isOpen, onOpenChange, config, onConfirmGenerate }: GenerateTimetableModalProps) {
+export function GenerateTimetableModal({ isOpen, onOpenChange, config, onConfirmGenerate, isLoading }: GenerateTimetableModalProps) {
   const [localConfig, setLocalConfig] = useState<TimetableConfig>(config);
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([]);
 
@@ -96,7 +97,7 @@ export function GenerateTimetableModal({ isOpen, onOpenChange, config, onConfirm
 
     console.log("Generated data from form:", JSON.stringify(payload, null, 2));
     onConfirmGenerate(payload);
-    onOpenChange(false);
+    // onOpenChange(false); // This is now handled in RoomDetail.tsx on success
   };
 
   return (
@@ -177,8 +178,11 @@ export function GenerateTimetableModal({ isOpen, onOpenChange, config, onConfirm
             </Card>
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button type="button" onClick={handleConfirm}>Confirm & Generate</Button>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>Cancel</Button>
+          <Button type="button" onClick={handleConfirm} disabled={isLoading}>
+            {isLoading && <Loader2 className="animate-spin mr-2 h-4 w-4" />}
+            Confirm & Generate
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

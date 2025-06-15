@@ -19,7 +19,7 @@ import { GenerateTimetableModal } from '@/components/GenerateTimetableModal';
 
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
-  const { role, schedule, timeSlots, generateSchedule } = useApp();
+  const { role, schedule, timeSlots, generateSchedule, isLoading } = useApp();
   const { toast } = useToast();
   const isAdmin = role === 'admin';
 
@@ -75,14 +75,16 @@ export default function RoomDetail() {
     setIsGenerateModalOpen(true);
   };
 
-  const handleConfirmGenerate = (payload: any) => {
-    const result = generateSchedule(payload);
+  const handleConfirmGenerate = async (payload: any) => {
+    const result = await generateSchedule(payload);
     toast({
-        title: result.success ? "Timetable Generated" : "Generation Issue",
+        title: result.success ? "Timetable Generated" : "Generation Failed",
         description: result.message,
         variant: result.success ? "default" : "destructive",
     });
-    setIsGenerateModalOpen(false);
+    if (result.success) {
+      setIsGenerateModalOpen(false);
+    }
   };
 
   // Handlers for the new config forms
@@ -268,6 +270,7 @@ export default function RoomDetail() {
         onOpenChange={setIsGenerateModalOpen}
         config={config}
         onConfirmGenerate={handleConfirmGenerate}
+        isLoading={isLoading}
       />
 
       {selectedEntry && (
