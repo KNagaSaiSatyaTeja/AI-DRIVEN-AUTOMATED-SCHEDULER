@@ -91,7 +91,7 @@ export function GenerateTimetableModal({ isOpen, onOpenChange, config, onConfirm
         startTime: b.startTime,
         endTime: b.endTime,
       })),
-      rooms: localConfig.rooms,
+      rooms: config.rooms,
       subjects: selectedSubjectsDetails,
     };
 
