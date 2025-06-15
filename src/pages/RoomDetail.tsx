@@ -23,16 +23,31 @@ export default function RoomDetail() {
   const { toast } = useToast();
   const isAdmin = role === 'admin';
 
-  const [config, setConfig] = useState<TimetableConfig>({
-    collegeTime: { startTime: "09:00", endTime: "17:00" },
-    breaks: [{ id: 'b1', day: 'ALL_DAYS', startTime: '13:00', endTime: '14:00' }],
-    rooms: ['A-101', 'B-203', 'C-305'],
-    subjects: [
-      { id: 's1', name: 'Quantum Physics', duration: 50, no_of_classes_per_week: 3, facultyIds: ['f1'] }
-    ],
-    faculty: [
-      { id: 'f1', name: 'Dr. Evelyn Reed', availability: [{ day: 'MONDAY', startTime: '09:00', endTime: '17:00' }] }
-    ]
+  const roomExistsInSchedule = schedule.some(entry => entry.room === roomId);
+
+  const [config, setConfig] = useState<TimetableConfig>(() => {
+    if (roomExistsInSchedule) {
+      return {
+        collegeTime: { startTime: "09:00", endTime: "17:00" },
+        breaks: [{ id: 'b1', day: 'ALL_DAYS', startTime: '13:00', endTime: '14:00' }],
+        rooms: ['A-101', 'B-203', 'C-305'],
+        subjects: [
+          { id: 's1', name: 'Quantum Physics', duration: 50, no_of_classes_per_week: 3, facultyIds: ['f1'] }
+        ],
+        faculty: [
+          { id: 'f1', name: 'Dr. Evelyn Reed', availability: [{ day: 'MONDAY', startTime: '09:00', endTime: '17:00' }] }
+        ]
+      };
+    }
+    
+    const originalRooms = Array.from(new Set(schedule.map(s => s.room)));
+    return {
+      collegeTime: { startTime: "09:00", endTime: "17:00" },
+      breaks: [{ id: 'b1', day: 'ALL_DAYS', startTime: '13:00', endTime: '14:00' }],
+      rooms: Array.from(new Set([...originalRooms, roomId!])),
+      subjects: [],
+      faculty: []
+    };
   });
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -40,21 +55,6 @@ export default function RoomDetail() {
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
 
   const roomSchedule = schedule.filter(entry => entry.room === roomId);
-  const roomExists = schedule.some(entry => entry.room === roomId);
-
-  if (!roomExists) {
-    return (
-      <div className="text-center py-10">
-        <h1 className="text-2xl font-bold">Room Not Found</h1>
-        <p className="text-muted-foreground">The room "{roomId}" does not exist.</p>
-        <Button asChild variant="link" className="mt-4">
-          <Link to="/rooms">
-            Back to All Rooms
-          </Link>
-        </Button>
-      </div>
-    );
-  }
 
   // Handlers for the original timetable view
   const handleEditClick = (entry: ScheduleEntry) => {
