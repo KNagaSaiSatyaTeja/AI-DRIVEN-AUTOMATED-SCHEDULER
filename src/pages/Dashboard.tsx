@@ -1,7 +1,6 @@
 
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
-import { AddFacultyModal } from '@/components/AddFacultyModal';
 import { AddUserModal } from '@/components/AddUserModal';
 import { useState } from 'react';
 import { getUniqueRooms } from '@/data/schedule';
@@ -10,7 +9,6 @@ import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const { role } = useApp();
-  const [isFacultyModalOpen, setIsFacultyModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   const isAdmin = role === 'admin';
@@ -30,9 +28,6 @@ export default function Dashboard() {
             <Button asChild className="cursor-pointer">
                 <Link to="/rooms">Manage Rooms</Link>
             </Button>
-            <AddFacultyModal isOpen={isFacultyModalOpen} onOpenChange={setIsFacultyModalOpen}>
-              <Button onClick={() => setIsFacultyModalOpen(true)} variant="secondary" className="cursor-pointer">Add Faculty</Button>
-            </AddFacultyModal>
             <AddUserModal isOpen={isUserModalOpen} onOpenChange={setIsUserModalOpen}>
               <Button onClick={() => setIsUserModalOpen(true)} variant="secondary" className="cursor-pointer">Add User</Button>
             </AddUserModal>
