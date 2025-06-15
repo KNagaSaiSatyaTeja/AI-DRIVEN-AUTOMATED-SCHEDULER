@@ -12,7 +12,7 @@ export function Sidebar() {
     <aside className="hidden md:flex md:flex-col md:w-64 bg-card border-r border-border">
       <div className="flex items-center h-16 px-6 border-b border-border">
         <Bot className="h-8 w-8 text-primary" />
-        <span className="ml-2 font-bold text-lg">AI Scheduler</span>
+        <span className="ml-2 font-bold text-lg">AI-Driven Scheduler</span>
       </div>
       <div className="flex-1 flex flex-col overflow-y-auto">
         <nav className="flex-1 px-4 py-4 space-y-1">
