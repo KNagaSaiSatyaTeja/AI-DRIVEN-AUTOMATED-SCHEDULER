@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { AddFacultyModal } from '@/components/AddFacultyModal';
 import { AddUserModal } from '@/components/AddUserModal';
 import { useState } from 'react';
-import { RoomView } from '@/components/RoomView';
 
 export default function Dashboard() {
   const { role } = useApp();
@@ -36,9 +35,6 @@ export default function Dashboard() {
         )}
       </div>
       <Timetable />
-      <div className="pt-6">
-        <RoomView />
-      </div>
     </div>
   );
 }
