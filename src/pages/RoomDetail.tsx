@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { days as originalDays, ScheduleEntry, TimetableConfig, configDays, CollegeTime, BreakConfig, SubjectConfig, FacultyConfig, ConfigDay } from '@/data/schedule';
@@ -15,10 +14,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ManageSubjects } from '@/components/ManageSubjects';
 import { ManageFaculty } from '@/components/ManageFaculty';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
-  const { role, schedule, timeSlots } = useApp();
+  const { role, schedule, timeSlots, generateSchedule } = useApp();
+  const { toast } = useToast();
   const isAdmin = role === 'admin';
 
   const [config, setConfig] = useState<TimetableConfig>({
@@ -66,7 +67,12 @@ export default function RoomDetail() {
 
   // Handler for generating timetable (placeholder)
   const handleGenerateTimetable = () => {
-    alert('This feature will automatically generate a timetable based on the new configuration. It is not yet implemented.');
+    const result = generateSchedule(config);
+    toast({
+        title: result.success ? "Timetable Generated" : "Generation Issue",
+        description: result.message,
+        variant: result.success ? "default" : "destructive",
+    });
   };
 
   // Handlers for the new config forms
@@ -190,7 +196,7 @@ export default function RoomDetail() {
                             This is the current, active timetable. Generate a new one based on your configuration.
                         </CardDescription>
                     </div>
-                    {isAdmin && <Button size="sm" onClick={handleGenerateTimetable}>{roomSchedule.length > 0 ? 'Generate New Timetable' : 'Generate Timetable'}</Button>}
+                    {isAdmin && <Button size="sm" onClick={handleGenerateTimetable}>{schedule.filter(e => e.room === roomId && e.subject !== 'Break').length > 0 ? 'Generate New Timetable' : 'Generate Timetable'}</Button>}
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
