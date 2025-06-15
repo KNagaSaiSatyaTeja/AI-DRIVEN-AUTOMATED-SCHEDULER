@@ -25,8 +25,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import { useApp } from '@/context/AppContext';
 
 export default function Rooms() {
+  const { role } = useApp();
+  const isAdmin = role === 'admin';
   const { toast } = useToast();
   const [rooms, setRooms] = useState<string[]>(() => getUniqueRooms().sort());
   
@@ -71,13 +74,15 @@ export default function Rooms() {
         <div>
           <h1 className="text-2xl font-bold">Manage Rooms</h1>
           <p className="text-muted-foreground">
-            Add, edit, or delete rooms. Changes are temporary.
+            {isAdmin ? 'Add, edit, or delete rooms.' : 'Browse available rooms.'} Changes are temporary.
           </p>
         </div>
-        <Button onClick={() => { setFormValue(''); setAddDialogOpen(true); }}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          New Room
-        </Button>
+        {isAdmin && (
+          <Button onClick={() => { setFormValue(''); setAddDialogOpen(true); }}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Room
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -89,14 +94,16 @@ export default function Rooms() {
                   Room: {room}
                 </Link>
               </CardTitle>
-              <div className="flex items-center space-x-1">
-                <Button variant="ghost" size="icon" onClick={() => { setCurrentRoom(room); setFormValue(room); setEditDialogOpen(true); }}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => { setCurrentRoom(room); setAlertDialogOpen(true); }}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
+              {isAdmin && (
+                <div className="flex items-center space-x-1">
+                  <Button variant="ghost" size="icon" onClick={() => { setCurrentRoom(room); setFormValue(room); setEditDialogOpen(true); }}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => { setCurrentRoom(room); setAlertDialogOpen(true); }}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              )}
             </CardHeader>
           </Card>
         ))}
