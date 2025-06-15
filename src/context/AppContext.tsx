@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 import { ScheduleEntry, scheduleData as initialScheduleData, initialTimeSlots, TimetableConfig, days, SubjectConfig } from '@/data/schedule';
+import axios from 'axios';
 
 type Role = 'admin' | 'user';
 
@@ -87,27 +88,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
 
     try {
-        const response = await fetch('http://127.0.0.1:8000/api/generate-schedule', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
+        const response = await axios.post('http://127.0.0.1:8000/api/generate-schedule', payload);
 
-        if (!response.ok) {
-            let errorData;
-            try {
-                errorData = await response.json();
-            } catch (e) {
-                errorData = { message: response.statusText };
-            }
-            console.error("Error from generation API:", errorData);
-            setIsLoading(false);
-            return { success: false, message: `Generation failed: ${errorData.detail || errorData.message || 'Unknown server error'}` };
-        }
-
-        const data = await response.json();
+        const data = response.data;
         console.log("Received data from API:", data);
 
         const transformedSchedule: ScheduleEntry[] = [];
@@ -141,6 +124,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
         console.error("Failed to fetch timetable:", error);
         setIsLoading(false);
+        if (axios.isAxiosError(error)) {
+            const errorData = error.response?.data;
+            const errorMessage = errorData?.detail || errorData?.message || error.message || 'Unknown server error';
+            console.error("Error from generation API:", errorData);
+            return { success: false, message: `Generation failed: ${errorMessage}` };
+        }
         return { success: false, message: 'Failed to connect to the schedule generation service. Please ensure it is running and accessible.' };
     }
   };
