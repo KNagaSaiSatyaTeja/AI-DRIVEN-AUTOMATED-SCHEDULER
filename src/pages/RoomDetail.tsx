@@ -9,19 +9,17 @@ import { cn } from '@/lib/utils';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { EditScheduleModal } from '@/components/EditScheduleModal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/components/ui/use-toast";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ManageSubjects } from '@/components/ManageSubjects';
+import { ManageFaculty } from '@/components/ManageFaculty';
 
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
-  // Keep using context for role and the original schedule for the timetable view
   const { role, schedule, timeSlots } = useApp();
   const isAdmin = role === 'admin';
-  const { toast } = useToast();
 
-  // The new configuration state, managed locally on this page.
   const [config, setConfig] = useState<TimetableConfig>({
     collegeTime: { startTime: "09:00", endTime: "17:00" },
     breaks: [{ id: 'b1', day: 'ALL_DAYS', startTime: '13:00', endTime: '14:00' }],
@@ -34,10 +32,6 @@ export default function RoomDetail() {
     ]
   });
 
-  // State for modal popups to edit items
-  const [editingSubject, setEditingSubject] = useState<SubjectConfig | null>(null);
-
-  // Still needed for the existing timetable view functionality
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null);
 
@@ -102,7 +96,7 @@ export default function RoomDetail() {
         </div>
       </div>
       
-      <Tabs defaultValue="timetable" className="w-full">
+      <Tabs defaultValue="subjects" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="subjects">Subjects</TabsTrigger>
             <TabsTrigger value="faculty">Faculty</TabsTrigger>
@@ -112,27 +106,11 @@ export default function RoomDetail() {
         </TabsList>
 
         <TabsContent value="subjects" className="mt-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Manage Subjects</CardTitle>
-                    <CardDescription>Add or edit subjects for the college.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-destructive text-sm p-4 bg-destructive/10 rounded-md">Note: This form is a work in progress. Editing and adding subjects will be fully implemented soon.</p>
-                </CardContent>
-            </Card>
+            <ManageSubjects config={config} setConfig={setConfig} />
         </TabsContent>
 
         <TabsContent value="faculty" className="mt-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Manage Faculty</CardTitle>
-                    <CardDescription>Add or edit faculty and their availability.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-destructive text-sm p-4 bg-destructive/10 rounded-md">Note: This form is a work in progress. Editing and adding faculty will be fully implemented soon.</p>
-                </CardContent>
-            </Card>
+            <ManageFaculty config={config} setConfig={setConfig} />
         </TabsContent>
 
         <TabsContent value="breaks" className="mt-4">
