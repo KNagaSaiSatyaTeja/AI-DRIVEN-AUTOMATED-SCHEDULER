@@ -129,12 +129,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         console.error("Failed to fetch timetable:", error);
         setIsLoading(false);
         if (axios.isAxiosError(error)) {
+            if (error.code === 'ERR_NETWORK') {
+                return { success: false, message: 'Network Error: Cannot connect to the server. Please ensure the backend is running and accessible at http://127.0.0.1:8000.' };
+            }
             const errorData = error.response?.data;
             const errorMessage = errorData?.detail || errorData?.message || error.message || 'Unknown server error';
             console.error("Error from generation API:", errorData);
             return { success: false, message: `Generation failed: ${errorMessage}` };
         }
-        return { success: false, message: 'Failed to connect to the schedule generation service. Please ensure it is running and accessible.' };
+        return { success: false, message: 'An unexpected error occurred while trying to connect to the generation service.' };
     }
   };
 
