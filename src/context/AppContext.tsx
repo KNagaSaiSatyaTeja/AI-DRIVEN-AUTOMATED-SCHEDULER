@@ -88,7 +88,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
 
     try {
-        const response = await axios.post('http://127.0.0.1:8000/api/generate-schedule', payload);
+        const response = await axios.post('http://127.0.0.1:8000/api/generate-schedule', payload, {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
 
         const data = response.data;
         console.log("Received data from API:", data);
