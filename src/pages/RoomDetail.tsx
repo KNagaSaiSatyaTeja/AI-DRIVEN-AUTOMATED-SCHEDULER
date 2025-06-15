@@ -26,20 +26,24 @@ export default function RoomDetail() {
   const roomExistsInSchedule = schedule.some(entry => entry.room === roomId);
 
   const [config, setConfig] = useState<TimetableConfig>(() => {
+    // If room exists in the initial data, load some sample config.
     if (roomExistsInSchedule) {
       return {
         collegeTime: { startTime: "09:00", endTime: "17:00" },
         breaks: [{ id: 'b1', day: 'ALL_DAYS', startTime: '13:00', endTime: '14:00' }],
         rooms: ['A-101', 'B-203', 'C-305'],
         subjects: [
-          { id: 's1', name: 'Quantum Physics', duration: 50, no_of_classes_per_week: 3, facultyIds: ['f1'] }
+          { id: 's1', name: 'Quantum Physics', duration: 50, no_of_classes_per_week: 3, facultyIds: ['f1'] },
+          { id: 's2', name: 'Data Structures', duration: 50, no_of_classes_per_week: 4, facultyIds: ['f2'] },
         ],
         faculty: [
-          { id: 'f1', name: 'Dr. Evelyn Reed', availability: [{ day: 'MONDAY', startTime: '09:00', endTime: '17:00' }] }
+          { id: 'f1', name: 'Dr. Evelyn Reed', availability: [{ day: 'MONDAY', startTime: '09:00', endTime: '17:00' }] },
+          { id: 'f2', name: 'Prof. Samuel Tan', availability: [{ day: 'TUESDAY', startTime: '09:00', endTime: '12:00' }] },
         ]
       };
     }
     
+    // For a new room, create a default config
     const originalRooms = Array.from(new Set(schedule.map(s => s.room)));
     return {
       collegeTime: { startTime: "09:00", endTime: "17:00" },
@@ -71,8 +75,8 @@ export default function RoomDetail() {
     setIsGenerateModalOpen(true);
   };
 
-  const handleConfirmGenerate = (configToGenerate: TimetableConfig) => {
-    const result = generateSchedule(configToGenerate);
+  const handleConfirmGenerate = (payload: any) => {
+    const result = generateSchedule(payload);
     toast({
         title: result.success ? "Timetable Generated" : "Generation Issue",
         description: result.message,

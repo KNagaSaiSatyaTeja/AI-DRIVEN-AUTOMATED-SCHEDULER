@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -21,7 +20,7 @@ interface GenerateTimetableModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   config: TimetableConfig;
-  onConfirmGenerate: (config: TimetableConfig) => void;
+  onConfirmGenerate: (payload: any) => void;
 }
 
 export function GenerateTimetableModal({ isOpen, onOpenChange, config, onConfirmGenerate }: GenerateTimetableModalProps) {
@@ -78,13 +77,13 @@ export function GenerateTimetableModal({ isOpen, onOpenChange, config, onConfirm
         return {
           name: subject.name,
           duration: subject.duration,
-          time: subject.duration, // As per your requested format
+          time: subject.duration,
           no_of_classes_per_week: subject.no_of_classes_per_week,
           faculty: faculties,
         };
       });
 
-    const data = {
+    const payload = {
       college_time: localConfig.collegeTime,
       break_: localConfig.breaks.map(b => ({
         day: b.day,
@@ -95,15 +94,9 @@ export function GenerateTimetableModal({ isOpen, onOpenChange, config, onConfirm
       subjects: selectedSubjectsDetails,
     };
 
-    console.log("Generated data from form:", JSON.stringify(data, null, 2));
-
-    const generationConfig: TimetableConfig = {
-      ...config,
-      collegeTime: localConfig.collegeTime,
-      breaks: localConfig.breaks,
-      subjects: config.subjects.filter(s => selectedSubjectIds.includes(s.id)),
-    };
-    onConfirmGenerate(generationConfig);
+    console.log("Generated data from form:", JSON.stringify(payload, null, 2));
+    onConfirmGenerate(payload);
+    onOpenChange(false);
   };
 
   return (
