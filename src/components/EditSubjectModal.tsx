@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 const subjectSchema = z.object({
   name: z.string().min(1, 'Subject name is required.'),
   duration: z.coerce.number().min(1, 'Duration must be positive.'),
-  no_of_classes_per_week: z.coerce.number().min(1, 'Classes per week must be at least 1.'),
+  no_of_classes_per_week: z.coerce.number().min(1, 'Periods per week must be at least 1.'),
   facultyIds: z.array(z.string()).optional(),
 });
 
@@ -87,7 +86,7 @@ export function EditSubjectModal({ isOpen, onOpenChange, subject, allFaculty, on
               )} />
               <FormField control={form.control} name="no_of_classes_per_week" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Classes per Week</FormLabel>
+                  <FormLabel>No. of Periods per Week</FormLabel>
                   <FormControl><Input type="number" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>

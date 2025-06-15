@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { TimetableConfig, SubjectConfig } from '@/data/schedule';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -66,7 +65,7 @@ export function ManageSubjects({ config, setConfig, isAdmin }: ManageSubjectsPro
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Duration (mins)</TableHead>
-                <TableHead>Classes/Week</TableHead>
+                <TableHead>No. of Periods/Week</TableHead>
                 <TableHead>Assigned Faculty</TableHead>
                 {isAdmin && <TableHead className="text-right">Actions</TableHead>}
               </TableRow>
