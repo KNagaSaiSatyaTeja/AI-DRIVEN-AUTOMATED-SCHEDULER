@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { TimetableConfig, FacultyConfig } from '@/data/schedule';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -76,7 +75,7 @@ export function ManageFaculty({ config, setConfig }: ManageFacultyProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Availability</TableHead>
+                <TableHead className="w-[40%]">Availability</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -84,7 +83,16 @@ export function ManageFaculty({ config, setConfig }: ManageFacultyProps) {
               {config.faculty.length > 0 ? config.faculty.map(faculty => (
                 <TableRow key={faculty.id}>
                   <TableCell className="font-medium">{faculty.name}</TableCell>
-                  <TableCell className="text-muted-foreground italic">Work in progress</TableCell>
+                  <TableCell>
+                    {faculty.availability && faculty.availability.length > 0
+                      ? <div className="flex flex-col gap-1">
+                          {faculty.availability.map((a, i) => (
+                            <span key={i} className="text-xs font-mono bg-muted/50 px-2 py-0.5 rounded">{`${a.day}: ${a.startTime} - ${a.endTime}`}</span>
+                          ))}
+                        </div>
+                      : <span className="text-muted-foreground italic">Not specified</span>
+                    }
+                  </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => handleEditFaculty(faculty)}>
                       <Edit className="h-4 w-4" />
