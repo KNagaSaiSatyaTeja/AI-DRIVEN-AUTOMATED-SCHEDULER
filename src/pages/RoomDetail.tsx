@@ -71,8 +71,8 @@ export default function RoomDetail() {
     setIsGenerateModalOpen(true);
   };
 
-  const handleConfirmGenerate = () => {
-    const result = generateSchedule(config);
+  const handleConfirmGenerate = (configToGenerate: TimetableConfig) => {
+    const result = generateSchedule(configToGenerate);
     toast({
         title: result.success ? "Timetable Generated" : "Generation Issue",
         description: result.message,
