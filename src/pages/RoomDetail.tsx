@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { days as originalDays, ScheduleEntry, TimetableConfig, configDays, CollegeTime, BreakConfig, SubjectConfig, FacultyConfig, ConfigDay } from '@/data/schedule';
@@ -187,7 +188,7 @@ export default function RoomDetail() {
                             This is the current, active timetable. Generate a new one based on your configuration.
                         </CardDescription>
                     </div>
-                    {isAdmin && <Button size="sm" onClick={handleGenerateTimetable}>Generate Timetable</Button>}
+                    {isAdmin && <Button size="sm" onClick={handleGenerateTimetable}>{roomSchedule.length > 0 ? 'Generate New Timetable' : 'Generate Timetable'}</Button>}
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
