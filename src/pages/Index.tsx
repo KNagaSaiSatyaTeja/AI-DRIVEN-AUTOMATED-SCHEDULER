@@ -6,8 +6,8 @@ import Users from "./Users";
 import NotFound from "./NotFound";
 import Rooms from "./Rooms";
 import RoomDetail from "./RoomDetail";
-import LoginPage from "./Login";
-import { useApp } from "@/context/AppContext";
+import AuthPage from "./Auth";
+import { useAuth } from "@/hooks/useAuth";
 
 const AppRoutes = () => (
   <Layout>
@@ -22,12 +22,20 @@ const AppRoutes = () => (
 );
 
 const Index = () => {
-  const { role } = useApp();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/*" element={role ? <AppRoutes /> : <Navigate to="/login" replace />} />
+      <Route path="/auth" element={<AuthPage />} />
+      <Route path="/*" element={user ? <AppRoutes /> : <Navigate to="/auth" replace />} />
     </Routes>
   );
 };
