@@ -3,16 +3,16 @@ import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { AddUserModal } from '@/components/AddUserModal';
 import { useState } from 'react';
-import { getUniqueRooms } from '@/data/schedule';
+import { useLocalData } from '@/hooks/useLocalData';
 import { RoomSchedule } from '@/components/RoomSchedule';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const { role } = useApp();
+  const { rooms } = useLocalData();
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   const isAdmin = role === 'admin';
-  const rooms = getUniqueRooms();
 
   return (
     <div className="space-y-6">
@@ -37,7 +37,7 @@ export default function Dashboard() {
       
       <div className="space-y-6">
         {rooms.map(room => (
-          <RoomSchedule key={room} roomId={room} />
+          <RoomSchedule key={room.id} roomId={room.name} />
         ))}
       </div>
     </div>

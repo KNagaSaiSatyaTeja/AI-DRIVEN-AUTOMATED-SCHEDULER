@@ -9,7 +9,159 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      faculty: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      rooms: {
+        Row: {
+          capacity: number | null
+          created_at: string | null
+          id: string
+          name: string
+          type: string | null
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string | null
+          id?: string
+          name: string
+          type?: string | null
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          type?: string | null
+        }
+        Relationships: []
+      }
+      schedule_entries: {
+        Row: {
+          class: string | null
+          created_at: string | null
+          day: string
+          faculty: string | null
+          id: string
+          room: string
+          subject: string | null
+          time: string
+        }
+        Insert: {
+          class?: string | null
+          created_at?: string | null
+          day: string
+          faculty?: string | null
+          id?: string
+          room: string
+          subject?: string | null
+          time: string
+        }
+        Update: {
+          class?: string | null
+          created_at?: string | null
+          day?: string
+          faculty?: string | null
+          id?: string
+          room?: string
+          subject?: string | null
+          time?: string
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: {
+          code: string | null
+          created_at: string | null
+          credits: number | null
+          id: string
+          name: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string | null
+          credits?: number | null
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string | null
+          credits?: number | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      time_slots: {
+        Row: {
+          created_at: string | null
+          end_time: string | null
+          id: string
+          start_time: string | null
+          time_slot: string
+        }
+        Insert: {
+          created_at?: string | null
+          end_time?: string | null
+          id?: string
+          start_time?: string | null
+          time_slot: string
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string | null
+          id?: string
+          start_time?: string | null
+          time_slot?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

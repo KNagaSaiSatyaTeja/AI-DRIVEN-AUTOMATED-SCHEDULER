@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { ScheduleEntry, scheduleData as initialScheduleData, initialTimeSlots } from '@/data/schedule';
 import { useAuth } from '@/hooks/useAuth';
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useLocalData } from '@/hooks/useLocalData';
 import axios from 'axios';
 
 type Role = 'admin' | 'user';
@@ -37,7 +37,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addTimeSlot: addDbTimeSlot,
     updateTimeSlot: updateDbTimeSlot,
     deleteTimeSlot: deleteDbTimeSlot 
-  } = useSupabaseData();
+  } = useLocalData();
 
   const [role, setRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +53,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
   
   const [localTimeSlots, setLocalTimeSlots] = useState<string[]>(() => {
-    const saved = localStorage.getItem('timetable-timeSlots');
+    const saved = localStorage.getItem('timetable-timeSlots-legacy');
     try {
         return saved ? JSON.parse(saved) : initialTimeSlots;
     } catch {
@@ -61,17 +61,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   });
 
-  // Use database data if user is authenticated, otherwise use local data
-  const schedule = user ? scheduleEntries.map(entry => ({
+  // Use local data since we're no longer using database
+  const schedule = scheduleEntries.map(entry => ({
     day: entry.day,
     time: entry.time,
     room: entry.room,
     subject: entry.subject || '',
     faculty: entry.faculty || '',
     class: entry.class || ''
-  })) : localSchedule;
+  }));
 
-  const timeSlots = user ? dbTimeSlots.map(ts => ts.time_slot) : localTimeSlots;
+  const timeSlots = dbTimeSlots.map(ts => ts.time_slot);
 
   // Update role when profile changes
   useEffect(() => {
@@ -95,18 +95,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [role, user]);
 
-  useEffect(() => {
-    if (!user) {
-      localStorage.setItem('timetable-schedule', JSON.stringify(localSchedule));
-    }
-  }, [localSchedule, user]);
-  
-  useEffect(() => {
-    if (!user) {
-      localStorage.setItem('timetable-timeSlots', JSON.stringify(localTimeSlots));
-    }
-  }, [localTimeSlots, user]);
-
   const logout = async () => {
     if (user) {
       await signOut();
@@ -115,103 +103,54 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateSchedule = async (entryToUpdate: ScheduleEntry) => {
-    if (user) {
-      // Find existing entry
-      const existingEntry = scheduleEntries.find(
-        e => e.day === entryToUpdate.day && e.time === entryToUpdate.time && e.room === entryToUpdate.room
-      );
+    // Find existing entry
+    const existingEntry = scheduleEntries.find(
+      e => e.day === entryToUpdate.day && e.time === entryToUpdate.time && e.room === entryToUpdate.room
+    );
 
-      if (existingEntry) {
-        await updateScheduleEntry(existingEntry.id, {
-          subject: entryToUpdate.subject,
-          faculty: entryToUpdate.faculty,
-          class: entryToUpdate.class
-        });
-      } else {
-        await addScheduleEntry({
-          day: entryToUpdate.day as any, // Type assertion to handle enum conversion
-          time: entryToUpdate.time,
-          room: entryToUpdate.room,
-          subject: entryToUpdate.subject,
-          faculty: entryToUpdate.faculty,
-          class: entryToUpdate.class
-        });
-      }
+    if (existingEntry) {
+      await updateScheduleEntry(existingEntry.id, {
+        subject: entryToUpdate.subject,
+        faculty: entryToUpdate.faculty,
+        class: entryToUpdate.class
+      });
     } else {
-      // Fallback to localStorage
-      setLocalSchedule(currentSchedule => {
-        const entryIndex = currentSchedule.findIndex(
-          e => e.day === entryToUpdate.day && e.time === entryToUpdate.time && e.room === entryToUpdate.room
-        );
-
-        if (entryIndex !== -1) {
-          const newSchedule = [...currentSchedule];
-          newSchedule[entryIndex] = entryToUpdate;
-          return newSchedule;
-        } else {
-          return [...currentSchedule, entryToUpdate];
-        }
+      await addScheduleEntry({
+        day: entryToUpdate.day as any,
+        time: entryToUpdate.time,
+        room: entryToUpdate.room,
+        subject: entryToUpdate.subject,
+        faculty: entryToUpdate.faculty,
+        class: entryToUpdate.class
       });
     }
   };
 
   const deleteSchedule = async (entryToDelete: ScheduleEntry) => {
-    if (user) {
-      const existingEntry = scheduleEntries.find(
-        e => e.day === entryToDelete.day && e.time === entryToDelete.time && e.room === entryToDelete.room
-      );
-      
-      if (existingEntry) {
-        await deleteScheduleEntry(existingEntry.id);
-      }
-    } else {
-      // Fallback to localStorage
-      setLocalSchedule(currentSchedule =>
-        currentSchedule.filter(
-          e => !(e.day === entryToDelete.day && e.time === entryToDelete.time && e.room === entryToDelete.room)
-        )
-      );
+    const existingEntry = scheduleEntries.find(
+      e => e.day === entryToDelete.day && e.time === entryToDelete.time && e.room === entryToDelete.room
+    );
+    
+    if (existingEntry) {
+      await deleteScheduleEntry(existingEntry.id);
     }
   };
 
   const addTimeSlot = async (timeSlot: string) => {
-    if (user) {
-      await addDbTimeSlot(timeSlot);
-    } else {
-      setLocalTimeSlots(current => {
-        if (current.includes(timeSlot)) {
-          return current;
-        }
-        return [...current, timeSlot].sort();
-      });
-    }
+    await addDbTimeSlot(timeSlot);
   };
 
   const updateTimeSlot = async (oldTimeSlot: string, newTimeSlot: string) => {
-    if (user) {
-      const existingSlot = dbTimeSlots.find(ts => ts.time_slot === oldTimeSlot);
-      if (existingSlot) {
-        await updateDbTimeSlot(existingSlot.id, newTimeSlot);
-      }
-    } else {
-      setLocalTimeSlots(current =>
-        current.map(ts => (ts === oldTimeSlot ? newTimeSlot : ts)).sort()
-      );
-      setLocalSchedule(currentSchedule =>
-        currentSchedule.map(e => (e.time === oldTimeSlot ? { ...e, time: newTimeSlot } : e))
-      );
+    const existingSlot = dbTimeSlots.find(ts => ts.time_slot === oldTimeSlot);
+    if (existingSlot) {
+      await updateDbTimeSlot(existingSlot.id, newTimeSlot);
     }
   };
 
   const deleteTimeSlot = async (timeSlot: string) => {
-    if (user) {
-      const existingSlot = dbTimeSlots.find(ts => ts.time_slot === timeSlot);
-      if (existingSlot) {
-        await deleteDbTimeSlot(existingSlot.id);
-      }
-    } else {
-      setLocalTimeSlots(current => current.filter(ts => ts !== timeSlot));
-      setLocalSchedule(currentSchedule => currentSchedule.filter(e => e.time !== timeSlot));
+    const existingSlot = dbTimeSlots.find(ts => ts.time_slot === timeSlot);
+    if (existingSlot) {
+      await deleteDbTimeSlot(existingSlot.id);
     }
   };
 
@@ -255,36 +194,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (data.weekly_schedule && data.weekly_schedule.time_slots) {
           const newTimeSlots = data.weekly_schedule.time_slots.map((ts: string) => ts.replace('-', ' - '));
           
-          if (user) {
-            // Clear existing time slots and add new ones
-            for (const slot of dbTimeSlots) {
-              await deleteDbTimeSlot(slot.id);
-            }
-            for (const slot of newTimeSlots) {
-              await addDbTimeSlot(slot);
-            }
-          } else {
-            setLocalTimeSlots(newTimeSlots);
+          // Clear existing time slots and add new ones
+          for (const slot of dbTimeSlots) {
+            await deleteDbTimeSlot(slot.id);
+          }
+          for (const slot of newTimeSlots) {
+            await addDbTimeSlot(slot);
           }
         }
 
         // Clear existing schedule and add new entries
-        if (user) {
-          for (const entry of scheduleEntries) {
-            await deleteScheduleEntry(entry.id);
-          }
-          for (const entry of transformedSchedule) {
-            await addScheduleEntry({
-              day: entry.day as any,
-              time: entry.time,
-              room: entry.room,
-              subject: entry.subject,
-              faculty: entry.faculty,
-              class: entry.class
-            });
-          }
-        } else {
-          setLocalSchedule(transformedSchedule);
+        for (const entry of scheduleEntries) {
+          await deleteScheduleEntry(entry.id);
+        }
+        for (const entry of transformedSchedule) {
+          await addScheduleEntry({
+            day: entry.day as any,
+            time: entry.time,
+            room: entry.room,
+            subject: entry.subject,
+            faculty: entry.faculty,
+            class: entry.class
+          });
         }
 
         setIsLoading(false);
