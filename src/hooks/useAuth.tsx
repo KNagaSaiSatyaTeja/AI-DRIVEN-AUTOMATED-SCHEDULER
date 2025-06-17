@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +19,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Demo users for testing
+  const demoUsers = [
+    { email: 'admin@demo.com', password: 'admin123', id: 'admin-demo' },
+    { email: 'user@demo.com', password: 'user123', id: 'user-demo' }
+  ];
+
   useEffect(() => {
+    // Check for demo user in localStorage first
+    const demoUser = localStorage.getItem('demo-user');
+    if (demoUser) {
+      const user = JSON.parse(demoUser);
+      setUser(user);
+      setSession({ user } as Session);
+      setLoading(false);
+      return;
+    }
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -52,6 +67,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithEmail = async (email: string, password: string) => {
+    // Check if it's a demo user first
+    const demoUser = demoUsers.find(u => u.email === email && u.password === password);
+    if (demoUser) {
+      const user = { id: demoUser.id, email: demoUser.email } as User;
+      setUser(user);
+      setSession({ user } as Session);
+      localStorage.setItem('demo-user', JSON.stringify(user));
+      return { error: null };
+    }
+
+    // Otherwise use Supabase
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -72,6 +98,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    // Clear demo user
+    localStorage.removeItem('demo-user');
+    setUser(null);
+    setSession(null);
+    
+    // Also sign out from Supabase
     await supabase.auth.signOut();
   };
 
@@ -86,7 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

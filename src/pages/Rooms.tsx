@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +28,7 @@ import { useApp } from '@/context/AppContext';
 
 export default function Rooms() {
   const { role } = useApp();
-  const { rooms } = useLocalData();
+  const { rooms, addRoom, updateRoom, deleteRoom } = useLocalData();
   const isAdmin = role === 'admin';
   const { toast } = useToast();
   
@@ -40,32 +39,48 @@ export default function Rooms() {
   const [currentRoom, setCurrentRoom] = useState('');
   const [formValue, setFormValue] = useState('');
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formValue && !rooms.some(r => r.name === formValue)) {
-      // For localStorage implementation, we'll need to implement room management
-      toast({ title: "Room added", description: `Room "${formValue}" has been added.` });
-      setAddDialogOpen(false);
+      const result = await addRoom(formValue);
+      if (result.data) {
+        toast({ title: "Room added", description: `Room "${formValue}" has been added.` });
+        setAddDialogOpen(false);
+        setFormValue('');
+      } else {
+        toast({ title: "Error", description: "Failed to add room.", variant: "destructive" });
+      }
     } else {
       toast({ title: "Error", description: "Room name cannot be empty or already exist.", variant: "destructive" });
     }
   };
 
-  const handleUpdate = (e: React.FormEvent) => {
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formValue && (!rooms.some(r => r.name === formValue) || formValue === currentRoom)) {
-      // For localStorage implementation, we'll need to implement room management
-      toast({ title: "Room updated", description: `Room "${currentRoom}" has been updated to "${formValue}".` });
-      setEditDialogOpen(false);
+      const result = await updateRoom(currentRoom, formValue);
+      if (!result.error) {
+        toast({ title: "Room updated", description: `Room "${currentRoom}" has been updated to "${formValue}".` });
+        setEditDialogOpen(false);
+        setFormValue('');
+        setCurrentRoom('');
+      } else {
+        toast({ title: "Error", description: "Failed to update room.", variant: "destructive" });
+      }
     } else {
       toast({ title: "Error", description: "Room name cannot be empty or already exist.", variant: "destructive" });
     }
   };
 
-  const handleDelete = () => {
-    // For localStorage implementation, we'll need to implement room management
-    toast({ title: "Room deleted", description: `Room "${currentRoom}" has been deleted.` });
-    setAlertDialogOpen(false);
+  const handleDelete = async () => {
+    const result = await deleteRoom(currentRoom);
+    if (!result.error) {
+      toast({ title: "Room deleted", description: `Room "${currentRoom}" has been deleted.` });
+      setAlertDialogOpen(false);
+      setCurrentRoom('');
+    } else {
+      toast({ title: "Error", description: "Failed to delete room.", variant: "destructive" });
+    }
   };
   
   return (
