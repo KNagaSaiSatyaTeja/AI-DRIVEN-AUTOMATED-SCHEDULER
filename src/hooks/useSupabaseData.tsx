@@ -61,27 +61,33 @@ export const useSupabaseData = () => {
   const fetchProfile = async () => {
     if (!user) return;
     
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    
-    if (data && !error) {
-      setProfile(data);
+    try {
+      const { data, error } = await supabase
+        .from('profiles' as any)
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (data && !error) {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.log('Profile fetch error:', error);
     }
   };
 
   // Fetch all data
   const fetchAllData = async () => {
+    if (!user) return;
+    
     setLoading(true);
     try {
       const [subjectsRes, facultyRes, roomsRes, timeSlotsRes, scheduleRes] = await Promise.all([
-        supabase.from('subjects').select('*').order('name'),
-        supabase.from('faculty').select('*').order('name'),
-        supabase.from('rooms').select('*').order('id'),
-        supabase.from('time_slots').select('*').order('time_slot'),
-        supabase.from('schedule_entries').select('*')
+        supabase.from('subjects' as any).select('*').order('name'),
+        supabase.from('faculty' as any).select('*').order('name'),
+        supabase.from('rooms' as any).select('*').order('id'),
+        supabase.from('time_slots' as any).select('*').order('time_slot'),
+        supabase.from('schedule_entries' as any).select('*')
       ]);
 
       if (subjectsRes.data) setSubjects(subjectsRes.data);
@@ -98,81 +104,111 @@ export const useSupabaseData = () => {
 
   // CRUD operations
   const addScheduleEntry = async (entry: Omit<ScheduleEntry, 'id'>) => {
-    const { data, error } = await supabase
-      .from('schedule_entries')
-      .insert([entry])
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('schedule_entries' as any)
+        .insert([entry] as any)
+        .select()
+        .single();
 
-    if (data && !error) {
-      setScheduleEntries(prev => [...prev, data]);
+      if (data && !error) {
+        setScheduleEntries(prev => [...prev, data]);
+      }
+      return { data, error };
+    } catch (error) {
+      console.error('Error adding schedule entry:', error);
+      return { data: null, error };
     }
-    return { data, error };
   };
 
   const updateScheduleEntry = async (id: string, updates: Partial<ScheduleEntry>) => {
-    const { data, error } = await supabase
-      .from('schedule_entries')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('schedule_entries' as any)
+        .update(updates as any)
+        .eq('id', id)
+        .select()
+        .single();
 
-    if (data && !error) {
-      setScheduleEntries(prev => prev.map(entry => entry.id === id ? data : entry));
+      if (data && !error) {
+        setScheduleEntries(prev => prev.map(entry => entry.id === id ? data : entry));
+      }
+      return { data, error };
+    } catch (error) {
+      console.error('Error updating schedule entry:', error);
+      return { data: null, error };
     }
-    return { data, error };
   };
 
   const deleteScheduleEntry = async (id: string) => {
-    const { error } = await supabase
-      .from('schedule_entries')
-      .delete()
-      .eq('id', id);
+    try {
+      const { error } = await supabase
+        .from('schedule_entries' as any)
+        .delete()
+        .eq('id', id);
 
-    if (!error) {
-      setScheduleEntries(prev => prev.filter(entry => entry.id !== id));
+      if (!error) {
+        setScheduleEntries(prev => prev.filter(entry => entry.id !== id));
+      }
+      return { error };
+    } catch (error) {
+      console.error('Error deleting schedule entry:', error);
+      return { error };
     }
-    return { error };
   };
 
   const addTimeSlot = async (timeSlot: string) => {
-    const { data, error } = await supabase
-      .from('time_slots')
-      .insert([{ time_slot: timeSlot }])
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('time_slots' as any)
+        .insert([{ time_slot: timeSlot }] as any)
+        .select()
+        .single();
 
-    if (data && !error) {
-      setTimeSlots(prev => [...prev, data]);
+      if (data && !error) {
+        setTimeSlots(prev => [...prev, data]);
+      }
+      return { data, error };
+    } catch (error) {
+      console.error('Error adding time slot:', error);
+      return { data: null, error };
     }
-    return { data, error };
   };
 
   const updateTimeSlot = async (id: string, timeSlot: string) => {
-    const { data, error } = await supabase
-      .from('time_slots')
-      .update({ time_slot: timeSlot })
-      .eq('id', id)
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('time_slots' as any)
+        .update({ time_slot: timeSlot } as any)
+        .eq('id', id)
+        .select()
+        .single();
 
-    if (data && !error) {
-      setTimeSlots(prev => prev.map(slot => slot.id === id ? data : slot));
+      if (data && !error) {
+        setTimeSlots(prev => prev.map(slot => slot.id === id ? data : slot));
+      }
+      return { data, error };
+    } catch (error) {
+      console.error('Error updating time slot:', error);
+      return { data: null, error };
     }
-    return { data, error };
   };
 
   const deleteTimeSlot = async (id: string) => {
-    const { error } = await supabase
-      .from('time_slots')
-      .delete()
-      .eq('id', id);
+    try {
+      const { error } = await supabase
+        .from('time_slots' as any)
+        .delete()
+        .eq('id', id);
 
-    if (!error) {
-      setTimeSlots(prev => prev.filter(slot => slot.id !== id));
+      if (!error) {
+        setTimeSlots(prev => prev.filter(slot => slot.id !== id));
+      }
+      return { error };
+    } catch (error) {
+      console.error('Error deleting time slot:', error);
+      return { error };
     }
-    return { error };
   };
 
   useEffect(() => {

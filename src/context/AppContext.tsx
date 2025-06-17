@@ -129,7 +129,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         });
       } else {
         await addScheduleEntry({
-          day: entryToUpdate.day,
+          day: entryToUpdate.day as any, // Type assertion to handle enum conversion
           time: entryToUpdate.time,
           room: entryToUpdate.room,
           subject: entryToUpdate.subject,
