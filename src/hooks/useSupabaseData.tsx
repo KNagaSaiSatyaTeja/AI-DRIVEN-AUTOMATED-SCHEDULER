@@ -62,8 +62,9 @@ export const useSupabaseData = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('profiles' as any)
+      // Use any type to bypass TypeScript checks until database is created
+      const { data, error } = await (supabase as any)
+        .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
@@ -82,12 +83,13 @@ export const useSupabaseData = () => {
     
     setLoading(true);
     try {
+      // Use any type to bypass TypeScript checks until database is created
       const [subjectsRes, facultyRes, roomsRes, timeSlotsRes, scheduleRes] = await Promise.all([
-        supabase.from('subjects' as any).select('*').order('name'),
-        supabase.from('faculty' as any).select('*').order('name'),
-        supabase.from('rooms' as any).select('*').order('id'),
-        supabase.from('time_slots' as any).select('*').order('time_slot'),
-        supabase.from('schedule_entries' as any).select('*')
+        (supabase as any).from('subjects').select('*').order('name'),
+        (supabase as any).from('faculty').select('*').order('name'),
+        (supabase as any).from('rooms').select('*').order('id'),
+        (supabase as any).from('time_slots').select('*').order('time_slot'),
+        (supabase as any).from('schedule_entries').select('*')
       ]);
 
       if (subjectsRes.data) setSubjects(subjectsRes.data);
@@ -105,9 +107,9 @@ export const useSupabaseData = () => {
   // CRUD operations
   const addScheduleEntry = async (entry: Omit<ScheduleEntry, 'id'>) => {
     try {
-      const { data, error } = await supabase
-        .from('schedule_entries' as any)
-        .insert([entry] as any)
+      const { data, error } = await (supabase as any)
+        .from('schedule_entries')
+        .insert([entry])
         .select()
         .single();
 
@@ -123,9 +125,9 @@ export const useSupabaseData = () => {
 
   const updateScheduleEntry = async (id: string, updates: Partial<ScheduleEntry>) => {
     try {
-      const { data, error } = await supabase
-        .from('schedule_entries' as any)
-        .update(updates as any)
+      const { data, error } = await (supabase as any)
+        .from('schedule_entries')
+        .update(updates)
         .eq('id', id)
         .select()
         .single();
@@ -142,8 +144,8 @@ export const useSupabaseData = () => {
 
   const deleteScheduleEntry = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('schedule_entries' as any)
+      const { error } = await (supabase as any)
+        .from('schedule_entries')
         .delete()
         .eq('id', id);
 
@@ -159,9 +161,9 @@ export const useSupabaseData = () => {
 
   const addTimeSlot = async (timeSlot: string) => {
     try {
-      const { data, error } = await supabase
-        .from('time_slots' as any)
-        .insert([{ time_slot: timeSlot }] as any)
+      const { data, error } = await (supabase as any)
+        .from('time_slots')
+        .insert([{ time_slot: timeSlot }])
         .select()
         .single();
 
@@ -177,9 +179,9 @@ export const useSupabaseData = () => {
 
   const updateTimeSlot = async (id: string, timeSlot: string) => {
     try {
-      const { data, error } = await supabase
-        .from('time_slots' as any)
-        .update({ time_slot: timeSlot } as any)
+      const { data, error } = await (supabase as any)
+        .from('time_slots')
+        .update({ time_slot: timeSlot })
         .eq('id', id)
         .select()
         .single();
@@ -196,8 +198,8 @@ export const useSupabaseData = () => {
 
   const deleteTimeSlot = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('time_slots' as any)
+      const { error } = await (supabase as any)
+        .from('time_slots')
         .delete()
         .eq('id', id);
 
