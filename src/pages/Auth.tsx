@@ -77,9 +77,21 @@ const AuthPage = () => {
           description: error.message,
         });
       } else {
+        // Create user profile with 'user' role by default
+        const userProfile = {
+          id: Date.now().toString(),
+          email: email,
+          role: 'user' as const
+        };
+        
+        // Save to localStorage profiles
+        const existingProfiles = JSON.parse(localStorage.getItem('timetable-profiles') || '[]');
+        existingProfiles.push(userProfile);
+        localStorage.setItem('timetable-profiles', JSON.stringify(existingProfiles));
+        
         toast({
-          title: 'Sign Up Successful',
-          description: 'Please check your email to confirm your account.',
+          title: 'Account Created Successfully',
+          description: 'Your account has been created with user privileges. Please check your email to confirm your account.',
         });
       }
     } catch (error: any) {
@@ -237,8 +249,11 @@ const AuthPage = () => {
                     minLength={6}
                   />
                 </div>
+                <div className="text-sm text-muted-foreground">
+                  New accounts are created with user privileges. Contact an admin to upgrade your account.
+                </div>
                 <Button type="submit" disabled={isLoading} className="w-full">
-                  Sign Up
+                  Create Account
                 </Button>
               </form>
             </TabsContent>
