@@ -1,73 +1,37 @@
-# Welcome to your Lovable project
+# Room-wise AI Automated Scheduler
 
-## Project info
+## 🔧 Tech Stack
 
-**URL**: https://lovable.dev/projects/d3a6f2ad-a0e8-4adc-8aed-dd2aa8df8c83
+This project is built using a modern, full-stack toolchain:
 
-## How can I edit this code?
+### Frontend
 
-There are several ways of editing your application.
+- **Vite** – Lightning-fast dev server and build tool  
+- **React** – For creating dynamic and interactive UIs  
+- **TypeScript** – For type-safe, maintainable frontend code  
+- **Tailwind CSS** – Utility-first CSS framework for fast styling  
+- **shadcn/ui** – Accessible and beautifully styled UI components
 
-**Use Lovable**
+### Backend & AI Scheduling Engine
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d3a6f2ad-a0e8-4adc-8aed-dd2aa8df8c83) and start prompting.
+- **Python** – Core logic and algorithm implementation  
+- **FastAPI** – High-performance web framework for building RESTful APIs  
+- **Genetic Algorithm** – Used to optimize timetable generation by simulating evolutionary processes  
+- **Constraint Satisfaction Problem (CSP)** – Ensures conflict-free schedules based on faculty availability, room constraints, and breaks  
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## 📌 Project Overview
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+The **Room-wise AI-Powered Automated Scheduler** is designed to automatically generate optimized class schedules based on:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- 🧑‍🏫 **Faculty Availability**  
+- 🏫 **Room and Subject Mapping**  
+- ⏰ **Institution-defined Breaks**  
+- 📆 **Multi-room, multi-slot scheduling with conflict resolution**
 
-Follow these steps:
+The system combines **real-time availability data** with **AI optimization techniques** to create efficient, conflict-free schedules. It intelligently balances workload and constraints using Genetic Algorithms and CSP techniques to ensure feasible and optimized timetable allocation for every room.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/d3a6f2ad-a0e8-4adc-8aed-dd2aa8df8c83) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Feel free to contribute or clone and customize this project further based on your institution’s needs!
