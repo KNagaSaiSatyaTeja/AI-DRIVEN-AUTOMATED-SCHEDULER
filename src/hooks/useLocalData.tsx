@@ -67,60 +67,10 @@ const demoProfiles: Profile[] = [
   { id: 'user-demo', email: 'user@demo.com', role: 'user' }
 ];
 
-// Initial room data structure
-const initialRoomData: RoomWiseData = {
-  "A-101": {
-    subjects: {
-      "s1": { id: "s1", name: "Computer Science", code: "CS101", credits: 3 },
-      "s2": { id: "s2", name: "Mathematics", code: "MATH101", credits: 4 }
-    },
-    faculty: {
-      "f1": { id: "f1", name: "Dr. John Smith", email: "john.smith@university.edu", department: "Computer Science" },
-      "f2": { id: "f2", name: "Prof. Jane Doe", email: "jane.doe@university.edu", department: "Mathematics" }
-    },
-    breaks: {
-      "b1": { id: "b1", day: "ALL_DAYS", startTime: "13:00", endTime: "14:00" }
-    },
-    timing: {
-      startTime: "09:00",
-      endTime: "17:00"
-    },
-    timetable: {
-      "monday-9": { id: "monday-9", day: "Monday", time: "9:00 AM - 10:00 AM", room: "A-101", subject: "Computer Science", faculty: "Dr. John Smith", class: "CS-1A" }
-    }
-  },
-  "B-202": {
-    subjects: {
-      "s3": { id: "s3", name: "Physics", code: "PHY101", credits: 3 }
-    },
-    faculty: {
-      "f3": { id: "f3", name: "Dr. Bob Wilson", email: "bob.wilson@university.edu", department: "Physics" }
-    },
-    breaks: {
-      "b1": { id: "b1", day: "ALL_DAYS", startTime: "13:00", endTime: "14:00" }
-    },
-    timing: {
-      startTime: "09:00",
-      endTime: "17:00"
-    },
-    timetable: {}
-  }
-};
-
-const initialRooms: Room[] = [
-  { id: '1', name: 'A-101', capacity: 30, type: 'Lecture Hall' },
-  { id: '2', name: 'B-202', capacity: 50, type: 'Auditorium' },
-  { id: '3', name: 'C-303', capacity: 20, type: 'Laboratory' },
-  { id: '4', name: 'D-404', capacity: 25, type: 'Classroom' },
-];
-
-const initialTimeSlots: TimeSlot[] = [
-  { id: '1', time_slot: '9:00 AM - 10:00 AM', start_time: '09:00', end_time: '10:00' },
-  { id: '2', time_slot: '10:00 AM - 11:00 AM', start_time: '10:00', end_time: '11:00' },
-  { id: '3', time_slot: '11:00 AM - 12:00 PM', start_time: '11:00', end_time: '12:00' },
-  { id: '4', time_slot: '2:00 PM - 3:00 PM', start_time: '14:00', end_time: '15:00' },
-  { id: '5', time_slot: '3:00 PM - 4:00 PM', start_time: '15:00', end_time: '16:00' },
-];
+// Empty initial data - cleared as requested
+const initialRoomData: RoomWiseData = {};
+const initialRooms: Room[] = [];
+const initialTimeSlots: TimeSlot[] = [];
 
 const getFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
   try {
