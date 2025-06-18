@@ -394,6 +394,51 @@ export const useLocalData = () => {
     }
   };
 
+  // Time slot management
+  const addTimeSlot = async (timeSlot: string) => {
+    try {
+      const newTimeSlot = {
+        id: Date.now().toString(),
+        time_slot: timeSlot,
+        start_time: timeSlot.split(' - ')[0],
+        end_time: timeSlot.split(' - ')[1]
+      };
+
+      setTimeSlots(prev => [...prev, newTimeSlot]);
+      return { data: newTimeSlot, error: null };
+    } catch (error) {
+      console.error('Error adding time slot:', error);
+      return { data: null, error };
+    }
+  };
+
+  const updateTimeSlot = async (id: string, newTimeSlot: string) => {
+    try {
+      setTimeSlots(prev => prev.map(slot => 
+        slot.id === id ? {
+          ...slot,
+          time_slot: newTimeSlot,
+          start_time: newTimeSlot.split(' - ')[0],
+          end_time: newTimeSlot.split(' - ')[1]
+        } : slot
+      ));
+      return { error: null };
+    } catch (error) {
+      console.error('Error updating time slot:', error);
+      return { error };
+    }
+  };
+
+  const deleteTimeSlot = async (id: string) => {
+    try {
+      setTimeSlots(prev => prev.filter(slot => slot.id !== id));
+      return { error: null };
+    } catch (error) {
+      console.error('Error deleting time slot:', error);
+      return { error };
+    }
+  };
+
   const refetch = async () => {
     return Promise.resolve();
   };
@@ -415,6 +460,9 @@ export const useLocalData = () => {
     addRoom,
     updateRoom,
     deleteRoom,
+    addTimeSlot,
+    updateTimeSlot,
+    deleteTimeSlot,
     refetch
   };
 };
