@@ -70,16 +70,16 @@ export function EditFacultyModal({ isOpen, onOpenChange, faculty, onSave }: Edit
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{faculty ? 'Edit Faculty' : 'Add New Faculty'}</DialogTitle>
           <DialogDescription>Fill in the details for the faculty member.</DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
-            <ScrollArea className="flex-1 pr-4 max-h-[60vh]">
-              <div className="space-y-4">
+            <ScrollArea className="flex-1 px-1">
+              <div className="space-y-4 pr-4">
                 <FormField control={form.control} name="name" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Faculty Name</FormLabel>
@@ -155,7 +155,7 @@ export function EditFacultyModal({ isOpen, onOpenChange, faculty, onSave }: Edit
               </div>
             </ScrollArea>
 
-            <DialogFooter className="mt-4 pt-4 border-t">
+            <DialogFooter className="flex-shrink-0 mt-4 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button type="submit">Save Faculty</Button>
             </DialogFooter>
