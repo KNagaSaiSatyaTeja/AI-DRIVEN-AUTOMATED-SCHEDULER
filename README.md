@@ -1,73 +1,102 @@
-# Welcome to your Lovable project
-
-## Project info
-
-**URL**: https://lovable.dev/projects/d3a6f2ad-a0e8-4adc-8aed-dd2aa8df8c83
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/d3a6f2ad-a0e8-4adc-8aed-dd2aa8df8c83) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
+AI-DRIVEN AUTOMATED SCHEDULER
+Project Overview
+This is an AI-driven automated scheduler application built with modern web technologies. The system intelligently manages and schedules tasks, meetings, and events using artificial intelligence algorithms.
+Technologies Used
 This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Vite - Fast build tool and development server
+TypeScript - Type-safe JavaScript development
+React - Frontend UI library
+shadcn-ui - Modern UI component library
+Tailwind CSS - Utility-first CSS framework
 
-## How can I deploy this project?
+Getting Started
+Prerequisites
 
-Simply open [Lovable](https://lovable.dev/projects/d3a6f2ad-a0e8-4adc-8aed-dd2aa8df8c83) and click on Share -> Publish.
+Node.js (v16 or higher)
+npm or yarn package manager
 
-## Can I connect a custom domain to my Lovable project?
+You can install Node.js using nvm for easy version management.
+Installation & Setup
 
-Yes, you can!
+Clone the repository
+bashgit clone https://github.com/KNagaSaiSatyaTeja/AI-DRIVEN-AUTOMATED-SCHEDULER-2-
+cd AI-DRIVEN-AUTOMATED-SCHEDULER-2-
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Install dependencies
+bashnpm install
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Start the development server
+bashnpm run dev
+Important: The scheduler must run on port 8000. Make sure to configure your development server to use port 8000.
+Build for production (when ready)
+bashnpm run build
+
+
+Development Workflow
+Local Development
+
+Important: The scheduler runs on http://localhost:8000
+Hot module replacement (HMR) is enabled for instant updates
+TypeScript compilation happens in real-time
+All development and testing should be done locally before considering deployment
+
+Code Structure
+src/
+├── components/     # React components
+├── pages/         # Application pages
+├── hooks/         # Custom React hooks
+├── utils/         # Utility functions
+├── types/         # TypeScript type definitions
+├── styles/        # Global styles
+└── assets/        # Static assets
+Running the Application
+Development Mode
+bashnpm run dev
+This will start the scheduler at http://localhost:8000
+Production Preview (Local)
+bashnpm run build
+npm run preview
+This builds the application and serves it locally for testing production builds.
+Features
+
+AI-Powered Scheduling: Intelligent task and meeting scheduling
+Real-time Updates: Live synchronization of schedule changes
+Responsive Design: Works seamlessly on desktop and mobile devices
+Type Safety: Full TypeScript support for better development experience
+Modern UI: Built with shadcn-ui and Tailwind CSS for a polished interface
+
+Local Development Notes
+
+The application is currently configured for local development only
+All data and configurations are stored locally
+The scheduler must run on port 8000 for proper functionality
+Ensure port 8000 is available before starting the development server
+
+Troubleshooting
+Port 8000 Already in Use
+If port 8000 is occupied, you'll need to:
+
+Stop the process using port 8000
+Or configure your Vite settings to use port 8000
+
+Installation Issues
+bash# Clear npm cache if you encounter installation problems
+npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install
+Contributing
+
+Fork the repository
+Create a feature branch: git checkout -b feature-name
+Make your changes and test locally at port 8000
+Commit your changes: git commit -m "Add feature"
+Push to your branch: git push origin feature-name
+Create a pull request
+
+License
+This project is open source and available under the MIT License.
+Contact
+For questions or support, please open an issue on GitHub or contact the project maintainer.
+
+This project demonstrates modern web development practices with AI integration for intelligent scheduling solutions. Currently optimized for local development at port 8000.
