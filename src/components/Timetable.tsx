@@ -9,6 +9,7 @@ import { days } from '@/data/schedule';
 export function Timetable() {
   const { role, schedule, timeSlots } = useApp();
   const isAdmin = role === 'admin';
+  
   return (
     <Card>
       <CardHeader>
@@ -42,7 +43,14 @@ export function Timetable() {
                     const isBreak = entry.subject === 'Break';
 
                     if (isBreak) {
-                        return <TableCell key={timeSlot} className="bg-muted/50 text-center text-xs italic">Break in {entry.room}</TableCell>
+                        return (
+                          <TableCell key={timeSlot} className="bg-muted/50 text-center">
+                            <div className="flex flex-col gap-1">
+                              <p className="text-sm font-medium text-muted-foreground">Break</p>
+                              <Badge variant="outline" className="text-xs">{entry.room}</Badge>
+                            </div>
+                          </TableCell>
+                        );
                     }
                     
                     return (
