@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { days as originalDays, ScheduleEntry, TimetableConfig, configDays, CollegeTime, BreakConfig, SubjectConfig, FacultyConfig, ConfigDay } from '@/data/schedule';
@@ -19,46 +20,30 @@ import { GenerateTimetableModal } from '@/components/GenerateTimetableModal';
 
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
-  const { role, schedule, timeSlots, generateSchedule, isLoading, saveRoomConfig, getRoomConfig } = useApp();
+  const { role, generateSchedule, isLoading, getRoomData, saveRoomData, updateRoomSchedule, deleteRoomSchedule } = useApp();
   const { toast } = useToast();
   const isAdmin = role === 'admin';
 
-  const roomExistsInSchedule = schedule.some(entry => entry.room === roomId);
-
-  const [config, setConfig] = useState<TimetableConfig>(() => {
-    // Try to load from local storage first
+  // Initialize room-specific data
+  const [roomData, setRoomData] = useState(() => {
     if (roomId) {
-      const savedConfig = getRoomConfig(roomId);
-      if (savedConfig) {
-        return savedConfig;
+      const savedData = getRoomData(roomId);
+      if (savedData) {
+        return savedData;
       }
     }
 
-    // If room exists in the initial data, load some sample config.
-    if (roomExistsInSchedule) {
-      return {
+    // Default room data
+    return {
+      schedule: [],
+      config: {
         collegeTime: { startTime: "09:00", endTime: "17:00" },
         breaks: [{ id: 'b1', day: 'ALL_DAYS', startTime: '13:00', endTime: '14:00' }],
-        rooms: ['A-101', 'B-203', 'C-305'],
-        subjects: [
-          { id: 's1', name: 'Quantum Physics', duration: 50, no_of_classes_per_week: 3, facultyIds: ['f1'] },
-          { id: 's2', name: 'Data Structures', duration: 50, no_of_classes_per_week: 4, facultyIds: ['f2'] },
-        ],
-        faculty: [
-          { id: 'f1', name: 'Dr. Evelyn Reed', availability: [{ day: 'MONDAY', startTime: '09:00', endTime: '17:00' }] },
-          { id: 'f2', name: 'Prof. Samuel Tan', availability: [{ day: 'TUESDAY', startTime: '09:00', endTime: '12:00' }] },
-        ]
-      };
-    }
-    
-    // For a new room, create a default config
-    const originalRooms = Array.from(new Set(schedule.map(s => s.room)));
-    return {
-      collegeTime: { startTime: "09:00", endTime: "17:00" },
-      breaks: [{ id: 'b1', day: 'ALL_DAYS', startTime: '13:00', endTime: '14:00' }],
-      rooms: Array.from(new Set([...originalRooms, roomId!])),
-      subjects: [],
-      faculty: []
+        rooms: [roomId || ''],
+        subjects: [],
+        faculty: []
+      },
+      timeSlots: ['09:00 - 10:00', '10:00 - 11:00', '11:00 - 12:00', '12:00 - 13:00', '14:00 - 15:00', '15:00 - 16:00', '16:00 - 17:00']
     };
   });
 
@@ -66,24 +51,51 @@ export default function RoomDetail() {
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
 
-  // Save config to local storage whenever it changes
+  // Save room data whenever it changes
   useEffect(() => {
-    if (roomId && config) {
-      saveRoomConfig(roomId, config);
+    if (roomId && roomData) {
+      saveRoomData(roomId, roomData);
     }
-  }, [config, roomId, saveRoomConfig]);
+  }, [roomData, roomId, saveRoomData]);
 
-  const roomSchedule = schedule.filter(entry => entry.room === roomId);
+  const updateConfig = (newConfig: TimetableConfig) => {
+    setRoomData(prev => ({ ...prev, config: newConfig }));
+  };
 
-  // Handlers for the original timetable view
+  // Handlers for the timetable view
   const handleEditClick = (entry: ScheduleEntry) => {
     setSelectedEntry(entry);
     setIsEditModalOpen(true);
   };
+
   const handleAddFromTimetable = (day: string, time: string) => {
     const newEntry: ScheduleEntry = { day, time, room: roomId || '', subject: '', faculty: '', class: '' };
     setSelectedEntry(newEntry);
     setIsEditModalOpen(true);
+  };
+
+  const handleScheduleUpdate = (entry: ScheduleEntry) => {
+    if (roomId) {
+      const updatedSchedule = [...roomData.schedule];
+      const entryIndex = updatedSchedule.findIndex(
+        e => e.day === entry.day && e.time === entry.time && e.room === entry.room
+      );
+
+      if (entryIndex !== -1) {
+        updatedSchedule[entryIndex] = entry;
+      } else {
+        updatedSchedule.push(entry);
+      }
+
+      setRoomData(prev => ({ ...prev, schedule: updatedSchedule }));
+    }
+  };
+
+  const handleScheduleDelete = (entry: ScheduleEntry) => {
+    const updatedSchedule = roomData.schedule.filter(
+      e => !(e.day === entry.day && e.time === entry.time && e.room === entry.room)
+    );
+    setRoomData(prev => ({ ...prev, schedule: updatedSchedule }));
   };
 
   const handleGenerateClick = () => {
@@ -91,30 +103,53 @@ export default function RoomDetail() {
   };
 
   const handleConfirmGenerate = async (payload: any) => {
-    const result = await generateSchedule(payload);
+    const result = await generateSchedule({ ...payload, roomId });
     toast({
         title: result.success ? "Timetable Generated" : "Generation Failed",
         description: result.message,
         variant: result.success ? "default" : "destructive",
     });
-    if (result.success) {
+    if (result.success && roomId) {
+      // Refresh room data after generation
+      const updatedData = getRoomData(roomId);
+      if (updatedData) {
+        setRoomData(updatedData);
+      }
       setIsGenerateModalOpen(false);
     }
   };
 
-  // Handlers for the new config forms
+  // Handlers for config forms
   const handleCollegeTimeChange = (field: keyof CollegeTime, value: string) => {
-    setConfig(prev => ({ ...prev, collegeTime: { ...prev.collegeTime, [field]: value } }));
+    setRoomData(prev => ({
+      ...prev,
+      config: {
+        ...prev.config,
+        collegeTime: { ...prev.config.collegeTime, [field]: value }
+      }
+    }));
   };
 
   const handleAddBreak = () => {
     const newBreak: BreakConfig = { id: `b${Date.now()}`, day: 'ALL_DAYS', startTime: '12:00', endTime: '13:00' };
-    setConfig(prev => ({...prev, breaks: [...prev.breaks, newBreak] }));
-  }
+    setRoomData(prev => ({
+      ...prev,
+      config: {
+        ...prev.config,
+        breaks: [...prev.config.breaks, newBreak]
+      }
+    }));
+  };
 
   const handleDeleteBreak = (id: string) => {
-    setConfig(prev => ({...prev, breaks: prev.breaks.filter(b => b.id !== id)}));
-  }
+    setRoomData(prev => ({
+      ...prev,
+      config: {
+        ...prev.config,
+        breaks: prev.config.breaks.filter(b => b.id !== id)
+      }
+    }));
+  };
 
   return (
     <div className="space-y-6">
@@ -126,7 +161,7 @@ export default function RoomDetail() {
                 </Link>
             </Button>
             <h1 className="text-2xl font-bold">Room: {roomId}</h1>
-            <p className="text-muted-foreground">Manage configuration or view the current schedule for this room.</p>
+            <p className="text-muted-foreground">Manage configuration and schedule for this room.</p>
         </div>
       </div>
       
@@ -140,11 +175,11 @@ export default function RoomDetail() {
         </TabsList>
 
         <TabsContent value="subjects" className="mt-4">
-            <ManageSubjects config={config} setConfig={setConfig} isAdmin={isAdmin} />
+            <ManageSubjects config={roomData.config} setConfig={updateConfig} isAdmin={isAdmin} />
         </TabsContent>
 
         <TabsContent value="faculty" className="mt-4">
-            <ManageFaculty config={config} setConfig={setConfig} isAdmin={isAdmin} />
+            <ManageFaculty config={roomData.config} setConfig={updateConfig} isAdmin={isAdmin} />
         </TabsContent>
 
         <TabsContent value="breaks" className="mt-4">
@@ -152,18 +187,21 @@ export default function RoomDetail() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                         <CardTitle>Manage Breaks</CardTitle>
-                        <CardDescription>Define college-wide break times.</CardDescription>
+                        <CardDescription>Define room-specific break times.</CardDescription>
                     </div>
                     {isAdmin && <Button size="sm" onClick={handleAddBreak}><Plus className="mr-2"/> Add Break</Button>}
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {config.breaks.map((breakItem, index) => (
+                        {roomData.config.breaks.map((breakItem, index) => (
                             <div key={breakItem.id} className="flex items-center gap-4 p-2 border rounded-lg">
                                 <Select defaultValue={breakItem.day} disabled={!isAdmin} onValueChange={(value) => {
-                                    const newBreaks = [...config.breaks];
+                                    const newBreaks = [...roomData.config.breaks];
                                     newBreaks[index].day = value as 'ALL_DAYS' | ConfigDay;
-                                    setConfig(prev => ({...prev, breaks: newBreaks}));
+                                    setRoomData(prev => ({
+                                      ...prev,
+                                      config: { ...prev.config, breaks: newBreaks }
+                                    }));
                                 }}>
                                     <SelectTrigger className="w-[180px]">
                                         <SelectValue placeholder="Select day" />
@@ -174,14 +212,20 @@ export default function RoomDetail() {
                                     </SelectContent>
                                 </Select>
                                 <Input type="time" value={breakItem.startTime} readOnly={!isAdmin} onChange={(e) => {
-                                     const newBreaks = [...config.breaks];
+                                     const newBreaks = [...roomData.config.breaks];
                                      newBreaks[index].startTime = e.target.value;
-                                     setConfig(prev => ({...prev, breaks: newBreaks}));
+                                     setRoomData(prev => ({
+                                       ...prev,
+                                       config: { ...prev.config, breaks: newBreaks }
+                                     }));
                                 }}/>
                                 <Input type="time" value={breakItem.endTime} readOnly={!isAdmin} onChange={(e) => {
-                                     const newBreaks = [...config.breaks];
+                                     const newBreaks = [...roomData.config.breaks];
                                      newBreaks[index].endTime = e.target.value;
-                                     setConfig(prev => ({...prev, breaks: newBreaks}));
+                                     setRoomData(prev => ({
+                                       ...prev,
+                                       config: { ...prev.config, breaks: newBreaks }
+                                     }));
                                 }}/>
                                 {isAdmin && (
                                     <Button variant="ghost" size="icon" onClick={() => handleDeleteBreak(breakItem.id)}>
@@ -198,17 +242,17 @@ export default function RoomDetail() {
         <TabsContent value="timings" className="mt-4">
             <Card>
                 <CardHeader>
-                    <CardTitle>College Timings</CardTitle>
-                    <CardDescription>Set the official start and end times for the college day.</CardDescription>
+                    <CardTitle>Room Timings</CardTitle>
+                    <CardDescription>Set the operating hours for this room.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex gap-4">
                     <div className="w-full space-y-2">
                         <Label htmlFor="startTime">Start Time</Label>
-                        <Input id="startTime" type="time" value={config.collegeTime.startTime} readOnly={!isAdmin} onChange={(e) => handleCollegeTimeChange('startTime', e.target.value)} />
+                        <Input id="startTime" type="time" value={roomData.config.collegeTime.startTime} readOnly={!isAdmin} onChange={(e) => handleCollegeTimeChange('startTime', e.target.value)} />
                     </div>
                     <div className="w-full space-y-2">
                         <Label htmlFor="endTime">End Time</Label>
-                        <Input id="endTime" type="time" value={config.collegeTime.endTime} readOnly={!isAdmin} onChange={(e) => handleCollegeTimeChange('endTime', e.target.value)} />
+                        <Input id="endTime" type="time" value={roomData.config.collegeTime.endTime} readOnly={!isAdmin} onChange={(e) => handleCollegeTimeChange('endTime', e.target.value)} />
                     </div>
                 </CardContent>
             </Card>
@@ -218,12 +262,12 @@ export default function RoomDetail() {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Weekly Schedule</CardTitle>
+                        <CardTitle>Room Schedule</CardTitle>
                         <CardDescription>
-                            This is the current, active timetable. Generate a new one based on your configuration.
+                            Current timetable for {roomId}. Generate a new one based on room configuration.
                         </CardDescription>
                     </div>
-                    {isAdmin && <Button size="sm" onClick={handleGenerateClick}>{schedule.filter(e => e.room === roomId && e.subject !== 'Break').length > 0 ? 'Generate New Timetable' : 'Generate Timetable'}</Button>}
+                    {isAdmin && <Button size="sm" onClick={handleGenerateClick}>{roomData.schedule.filter(e => e.subject !== 'Break').length > 0 ? 'Generate New Timetable' : 'Generate Timetable'}</Button>}
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="overflow-x-auto">
@@ -231,15 +275,15 @@ export default function RoomDetail() {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-[120px]">Day</TableHead>
-                          {timeSlots.map(timeSlot => <TableHead key={timeSlot}>{timeSlot}</TableHead>)}
+                          {roomData.timeSlots.map(timeSlot => <TableHead key={timeSlot}>{timeSlot}</TableHead>)}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {originalDays.map(day => (
                           <TableRow key={day}>
                             <TableCell className="font-medium text-muted-foreground">{day}</TableCell>
-                            {timeSlots.map(timeSlot => {
-                              const entry = roomSchedule.find(s => s.day === day && s.time === timeSlot);
+                            {roomData.timeSlots.map(timeSlot => {
+                              const entry = roomData.schedule.find(s => s.day === day && s.time === timeSlot);
                               const isBreak = entry?.subject === 'Break';
 
                               if (isBreak) {
@@ -283,7 +327,7 @@ export default function RoomDetail() {
       <GenerateTimetableModal
         isOpen={isGenerateModalOpen}
         onOpenChange={setIsGenerateModalOpen}
-        config={config}
+        config={roomData.config}
         onConfirmGenerate={handleConfirmGenerate}
         isLoading={isLoading}
       />
@@ -293,9 +337,11 @@ export default function RoomDetail() {
           isOpen={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
           scheduleEntry={selectedEntry}
-          subjects={config.subjects}
-          faculty={config.faculty}
-          rooms={config.rooms}
+          subjects={roomData.config.subjects}
+          faculty={roomData.config.faculty}
+          rooms={roomData.config.rooms}
+          onSave={handleScheduleUpdate}
+          onDelete={handleScheduleDelete}
         />
       )}
     </div>
