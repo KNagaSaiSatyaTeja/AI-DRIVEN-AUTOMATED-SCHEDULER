@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { days as originalDays, ScheduleEntry, TimetableConfig, configDays, CollegeTime, BreakConfig, SubjectConfig, FacultyConfig, ConfigDay } from '@/data/schedule';
@@ -340,8 +339,6 @@ export default function RoomDetail() {
           subjects={roomData.config.subjects}
           faculty={roomData.config.faculty}
           rooms={roomData.config.rooms}
-          onSave={handleScheduleUpdate}
-          onDelete={handleScheduleDelete}
         />
       )}
     </div>
