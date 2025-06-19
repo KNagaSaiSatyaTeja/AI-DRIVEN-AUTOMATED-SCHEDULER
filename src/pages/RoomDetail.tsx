@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { days as originalDays, ScheduleEntry, TimetableConfig, configDays, CollegeTime, BreakConfig, SubjectConfig, FacultyConfig, ConfigDay } from '@/data/schedule';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -19,13 +19,21 @@ import { GenerateTimetableModal } from '@/components/GenerateTimetableModal';
 
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
-  const { role, schedule, timeSlots, generateSchedule, isLoading } = useApp();
+  const { role, schedule, timeSlots, generateSchedule, isLoading, saveRoomConfig, getRoomConfig } = useApp();
   const { toast } = useToast();
   const isAdmin = role === 'admin';
 
   const roomExistsInSchedule = schedule.some(entry => entry.room === roomId);
 
   const [config, setConfig] = useState<TimetableConfig>(() => {
+    // Try to load from local storage first
+    if (roomId) {
+      const savedConfig = getRoomConfig(roomId);
+      if (savedConfig) {
+        return savedConfig;
+      }
+    }
+
     // If room exists in the initial data, load some sample config.
     if (roomExistsInSchedule) {
       return {
@@ -57,6 +65,13 @@ export default function RoomDetail() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+
+  // Save config to local storage whenever it changes
+  useEffect(() => {
+    if (roomId && config) {
+      saveRoomConfig(roomId, config);
+    }
+  }, [config, roomId, saveRoomConfig]);
 
   const roomSchedule = schedule.filter(entry => entry.room === roomId);
 

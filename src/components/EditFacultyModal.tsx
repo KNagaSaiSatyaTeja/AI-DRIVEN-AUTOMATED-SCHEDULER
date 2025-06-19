@@ -70,92 +70,95 @@ export function EditFacultyModal({ isOpen, onOpenChange, faculty, onSave }: Edit
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-2xl h-[80vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>{faculty ? 'Edit Faculty' : 'Add New Faculty'}</DialogTitle>
           <DialogDescription>Fill in the details for the faculty member.</DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 pr-6">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Faculty Name</FormLabel>
-                  <FormControl><Input placeholder="e.g., Dr. Evelyn Reed" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              
-              <div>
-                <FormLabel>Availability</FormLabel>
-                <div className="p-4 mt-2 space-y-4 border rounded-md">
-                  {fields.length > 0 ? fields.map((item, index) => (
-                    <div key={item.id} className="flex items-end gap-2 p-2 -mx-2 border-b">
-                      <FormField
-                        control={form.control}
-                        name={`availability.${index}.day`}
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-xs">Day</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select day" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {configDays.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`availability.${index}.startTime`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">Start Time</FormLabel>
-                            <FormControl><Input type="time" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                       <FormField
-                        control={form.control}
-                        name={`availability.${index}.endTime`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">End Time</FormLabel>
-                            <FormControl><Input type="time" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  )) : <p className="text-sm text-center text-muted-foreground">No availability slots added.</p>}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => append({ day: 'MONDAY', startTime: '09:00', endTime: '17:00' })}
-                  >
-                    <Plus className="mr-2" />
-                    Add Availability
-                  </Button>
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full pr-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-4">
+                <FormField control={form.control} name="name" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Faculty Name</FormLabel>
+                    <FormControl><Input placeholder="e.g., Dr. Evelyn Reed" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                
+                <div>
+                  <FormLabel>Availability</FormLabel>
+                  <div className="p-4 mt-2 space-y-4 border rounded-md">
+                    {fields.length > 0 ? fields.map((item, index) => (
+                      <div key={item.id} className="flex items-end gap-2 p-2 border-b last:border-b-0">
+                        <FormField
+                          control={form.control}
+                          name={`availability.${index}.day`}
+                          render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-xs">Day</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select day" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {configDays.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`availability.${index}.startTime`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">Start Time</FormLabel>
+                              <FormControl><Input type="time" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                         <FormField
+                          control={form.control}
+                          name={`availability.${index}.endTime`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-xs">End Time</FormLabel>
+                              <FormControl><Input type="time" {...field} /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    )) : <p className="text-sm text-center text-muted-foreground">No availability slots added.</p>}
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-4"
+                      onClick={() => append({ day: 'MONDAY', startTime: '09:00', endTime: '17:00' })}
+                    >
+                      <Plus className="mr-2 w-4 h-4" />
+                      Add Availability
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </form>
-          </Form>
-        </ScrollArea>
+              </form>
+            </Form>
+          </ScrollArea>
+        </div>
 
-        <DialogFooter className="flex-shrink-0 mt-4">
+        <DialogFooter className="flex-shrink-0 mt-4 pt-4 border-t">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button type="submit" onClick={form.handleSubmit(onSubmit)}>Save Faculty</Button>
         </DialogFooter>

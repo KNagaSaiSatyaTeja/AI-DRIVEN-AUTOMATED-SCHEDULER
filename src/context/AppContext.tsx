@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { ScheduleEntry, scheduleData as initialScheduleData, initialTimeSlots, TimetableConfig, days, SubjectConfig } from '@/data/schedule';
 import axios from 'axios';
 
@@ -18,9 +19,13 @@ interface AppContextType {
   updateTimeSlot: (oldTimeSlot: string, newTimeSlot: string) => void;
   deleteTimeSlot: (timeSlot: string) => void;
   generateSchedule: (payload: any) => Promise<{ success: boolean, message: string }>;
+  saveRoomConfig: (roomId: string, config: TimetableConfig) => void;
+  getRoomConfig: (roomId: string) => TimetableConfig | null;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+const ROOM_CONFIG_STORAGE_KEY = 'room_configs';
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<Role | null>(null);
@@ -81,6 +86,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // This will also delete schedule entries in this slot.
     setTimeSlots(current => current.filter(ts => ts !== timeSlot));
     setSchedule(currentSchedule => currentSchedule.filter(e => e.time !== timeSlot));
+  };
+
+  const saveRoomConfig = (roomId: string, config: TimetableConfig) => {
+    try {
+      const existingConfigs = JSON.parse(localStorage.getItem(ROOM_CONFIG_STORAGE_KEY) || '{}');
+      existingConfigs[roomId] = config;
+      localStorage.setItem(ROOM_CONFIG_STORAGE_KEY, JSON.stringify(existingConfigs));
+      console.log(`Saved config for room ${roomId}:`, config);
+    } catch (error) {
+      console.error('Error saving room config:', error);
+    }
+  };
+
+  const getRoomConfig = (roomId: string): TimetableConfig | null => {
+    try {
+      const existingConfigs = JSON.parse(localStorage.getItem(ROOM_CONFIG_STORAGE_KEY) || '{}');
+      const config = existingConfigs[roomId];
+      console.log(`Retrieved config for room ${roomId}:`, config);
+      return config || null;
+    } catch (error) {
+      console.error('Error retrieving room config:', error);
+      return null;
+    }
   };
 
   const generateSchedule = async (payload: any): Promise<{ success: boolean; message: string }> => {
@@ -144,7 +172,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const value = { role, setRole, logout, isLoading, setIsLoading, schedule, updateSchedule, deleteSchedule, timeSlots, addTimeSlot, updateTimeSlot, deleteTimeSlot, generateSchedule };
+  const value = { 
+    role, setRole, logout, isLoading, setIsLoading, schedule, updateSchedule, deleteSchedule, 
+    timeSlots, addTimeSlot, updateTimeSlot, deleteTimeSlot, generateSchedule,
+    saveRoomConfig, getRoomConfig
+  };
 
   return (
     <AppContext.Provider value={value}>
