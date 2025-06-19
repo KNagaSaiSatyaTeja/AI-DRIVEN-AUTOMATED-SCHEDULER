@@ -33,16 +33,16 @@ export default function RoomDetail() {
       }
     }
 
-    // Default room data
+    // Default room data with proper types
     return {
-      schedule: [],
+      schedule: [] as ScheduleEntry[],
       config: {
         collegeTime: { startTime: "09:00", endTime: "17:00" },
-        breaks: [{ id: 'b1', day: 'ALL_DAYS', startTime: '13:00', endTime: '14:00' }],
+        breaks: [{ id: 'b1', day: 'ALL_DAYS' as const, startTime: '13:00', endTime: '14:00' }] as BreakConfig[],
         rooms: [roomId || ''],
-        subjects: [],
-        faculty: []
-      },
+        subjects: [] as SubjectConfig[],
+        faculty: [] as FacultyConfig[]
+      } as TimetableConfig,
       timeSlots: ['09:00 - 10:00', '10:00 - 11:00', '11:00 - 12:00', '12:00 - 13:00', '14:00 - 15:00', '15:00 - 16:00', '16:00 - 17:00']
     };
   });
