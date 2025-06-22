@@ -7,8 +7,21 @@ import { cn } from '@/lib/utils';
 import { days } from '@/data/schedule';
 
 export function Timetable() {
-  const { role, schedule, timeSlots } = useApp();
+  const { role, schedule, timeSlots, timetables } = useApp();
   const isAdmin = role === 'admin';
+  
+  // Get breaks from timetables data
+  const allBreaks = timetables.flatMap(t => t.breaks || []);
+  
+  // Helper function to check if a time slot is a break
+  const isBreakTime = (day: string, timeSlot: string) => {
+    const [startTime, endTime] = timeSlot.split(' - ');
+    return allBreaks.some(breakItem => {
+      const breakDay = breakItem.day === 'ALL_DAYS' ? day.toUpperCase() : breakItem.day;
+      return (breakDay === day.toUpperCase() || breakItem.day === 'ALL_DAYS') &&
+             breakItem.startTime <= startTime && breakItem.endTime >= endTime;
+    });
+  };
   
   return (
     <Card>
@@ -30,6 +43,18 @@ export function Timetable() {
                   <TableCell className="font-medium text-muted-foreground">{day}</TableCell>
                   {timeSlots.map(timeSlot => {
                     const entries = schedule.filter(s => s.day === day && s.time === timeSlot);
+                    const isBreak = isBreakTime(day, timeSlot);
+                    
+                    if (isBreak) {
+                      return (
+                        <TableCell key={timeSlot} className="bg-muted/50 text-center">
+                          <div className="flex flex-col gap-1">
+                            <p className="text-sm font-medium text-muted-foreground">Break</p>
+                            <Badge variant="outline" className="text-xs">Break Time</Badge>
+                          </div>
+                        </TableCell>
+                      );
+                    }
                     
                     if (entries.length === 0) {
                         return <TableCell key={timeSlot}></TableCell>
@@ -40,18 +65,6 @@ export function Timetable() {
                     }
 
                     const entry = entries[0];
-                    const isBreak = entry.subject === 'Break';
-
-                    if (isBreak) {
-                        return (
-                          <TableCell key={timeSlot} className="bg-muted/50 text-center">
-                            <div className="flex flex-col gap-1">
-                              <p className="text-sm font-medium text-muted-foreground">Break</p>
-                              <Badge variant="outline" className="text-xs">{entry.room}</Badge>
-                            </div>
-                          </TableCell>
-                        );
-                    }
                     
                     return (
                       <TableCell key={timeSlot} className={cn(isAdmin && entry && "cursor-pointer hover:bg-accent")}>

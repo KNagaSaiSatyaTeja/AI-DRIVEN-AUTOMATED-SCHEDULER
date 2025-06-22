@@ -147,7 +147,7 @@ export function EditFacultyModal({ isOpen, onOpenChange, faculty, onSave }: Edit
                       variant="outline"
                       size="sm"
                       className="w-full mt-4"
-                      onClick={() => append({ day: 'MONDAY', startTime: '09:00', endTime: '17:00' })}
+                      onClick={() => append({ day: 'ALL_DAYS', startTime: '09:00', endTime: '17:00' })}
                     >
                       <Plus className="mr-2 w-4 h-4" />
                       Add Availability
