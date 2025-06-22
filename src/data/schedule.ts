@@ -1,4 +1,3 @@
-
 export interface ScheduleEntry {
     time: string;
     subject: string;
@@ -25,7 +24,7 @@ export const getUniqueRooms = (timetables: any[] = []) => {
 
 // --- Timetable Configuration Types ---
 
-export const configDays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'] as const;
+export const configDays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'ALL_DAYS'] as const;
 
 export type ConfigDay = (typeof configDays)[number];
 

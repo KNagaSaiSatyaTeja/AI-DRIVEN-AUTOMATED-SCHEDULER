@@ -13,7 +13,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const availabilitySchema = z.object({
-  day: z.enum(configDays),
+  day: z.enum(['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'ALL_DAYS']),
   startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format (HH:MM)"),
   endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format (HH:MM)"),
 }).refine(data => data.startTime < data.endTime, {
@@ -106,7 +106,8 @@ export function EditFacultyModal({ isOpen, onOpenChange, faculty, onSave }: Edit
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {configDays.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}
+                                  <SelectItem value="ALL_DAYS">All Days</SelectItem>
+                                  {configDays.filter(day => day !== 'ALL_DAYS').map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
