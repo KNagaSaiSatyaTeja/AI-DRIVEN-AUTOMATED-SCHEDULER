@@ -1,177 +1,62 @@
-// import {
-//   Dialog,
-//   DialogContent,
-//   DialogHeader,
-//   DialogTitle,
-//   DialogDescription,
-//   DialogFooter,
-// } from '@/components/ui/dialog';
-// import { Button } from '@/components/ui/button';
-// import { Input } from '@/components/ui/input';
-// import { Label } from '@/components/ui/label';
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-// import { useApp } from '@/context/AppContext';
-// import React, { useState, useEffect } from 'react';
 
-// interface EditUserModalProps {
-//   user: {
-//     id: string;
-//     name: string;
-//     email: string;
-//     role: string;
-//   };
-//   isOpen: boolean;
-//   onOpenChange: (isOpen: boolean) => void;
-// }
-
-// export function EditUserModal({ user, isOpen, onOpenChange }: EditUserModalProps) {
-//   const { setIsLoading } = useApp();
-//   const [name, setName] = useState('');
-//   const [email, setEmail] = useState('');
-//   const [role, setRole] = useState('');
-
-//   useEffect(() => {
-//     if (user) {
-//       setName(user.name);
-//       setEmail(user.email);
-//       setRole(user.role);
-//     }
-//   }, [user]);
-
-//   const handleSubmit = (e: React.FormEvent) => {
-//     e.preventDefault();
-//     setIsLoading(true);
-//     console.log("Updating user:", { id: user.id, name, email, role });
-//     // Simulate API call
-//     setTimeout(() => {
-//       setIsLoading(false);
-//       onOpenChange(false);
-//     }, 1500);
-//   };
-
-//   return (
-//     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-//       <DialogContent className="sm:max-w-[425px]">
-//         <form onSubmit={handleSubmit}>
-//           <DialogHeader>
-//             <DialogTitle>Edit User</DialogTitle>
-//             <DialogDescription>
-//               Update user information and role.
-//             </DialogDescription>
-//           </DialogHeader>
-//           <div className="grid gap-4 py-4">
-//             <div className="grid grid-cols-4 items-center gap-4">
-//               <Label htmlFor="edit-name" className="text-right">
-//                 Full Name
-//               </Label>
-//               <Input
-//                 id="edit-name"
-//                 value={name}
-//                 onChange={(e) => setName(e.target.value)}
-//                 className="col-span-3 cursor-text"
-//               />
-//             </div>
-//             <div className="grid grid-cols-4 items-center gap-4">
-//               <Label htmlFor="edit-email" className="text-right">
-//                 Email
-//               </Label>
-//               <Input
-//                 id="edit-email"
-//                 type="email"
-//                 value={email}
-//                 onChange={(e) => setEmail(e.target.value)}
-//                 className="col-span-3 cursor-text"
-//               />
-//             </div>
-//             <div className="grid grid-cols-4 items-center gap-4">
-//               <Label htmlFor="edit-role" className="text-right">
-//                 Role
-//               </Label>
-//               <Select value={role} onValueChange={setRole}>
-//                 <SelectTrigger className="col-span-3 cursor-pointer">
-//                   <SelectValue placeholder="Select a role" />
-//                 </SelectTrigger>
-//                 <SelectContent>
-//                   <SelectItem value="user" className="cursor-pointer">User</SelectItem>
-//                   <SelectItem value="admin" className="cursor-pointer">Admin</SelectItem>
-//                 </SelectContent>
-//               </Select>
-//             </div>
-//           </div>
-//           <DialogFooter>
-//             <Button type="submit" className="cursor-pointer">Update User</Button>
-//           </DialogFooter>
-//         </form>
-//       </DialogContent>
-//     </Dialog>
-//   );
-// }
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useApp } from "@/context/AppContext";
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/components/ui/use-toast';
+import { useApp } from '@/context/AppContext';
+import axios from 'axios';
 
 interface EditUserModalProps {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-  };
+  user: any;
   isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
+  onOpenChange: (open: boolean) => void;
+  onUserUpdated?: () => void;
 }
 
-export function EditUserModal({
-  user,
-  isOpen,
-  onOpenChange,
-}: EditUserModalProps) {
-  const { setIsLoading } = useApp();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
-
-  useEffect(() => {
-    if (user) {
-      setName(user.name);
-      setEmail(user.email);
-      setRole(user.role);
-    }
-  }, [user]);
+export function EditUserModal({ user, isOpen, onOpenChange, onUserUpdated }: EditUserModalProps) {
+  const { token } = useApp();
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    role: user?.role || 'user',
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token || !user) return;
+
     setIsLoading(true);
     try {
       await axios.put(
-        `${import.meta.env.VITE_APP_API_BASE_URL}/auth/${user.id}`,
+        `${import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api'}/users/${user._id}`,
+        formData,
         {
-          name,
-          email,
-          role,
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
       );
+      
+      toast({
+        title: 'Success',
+        description: 'User updated successfully!',
+      });
+      
       onOpenChange(false);
+      if (onUserUpdated) {
+        onUserUpdated();
+      }
     } catch (error) {
-      console.error("Error updating user:", error);
+      console.error('Error updating user:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update user. Please try again.',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -180,61 +65,49 @@ export function EditUserModal({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>
-              Update user information and role.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-name" className="text-right">
-                Full Name
-              </Label>
-              <Input
-                id="edit-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="col-span-3 cursor-text"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-email" className="text-right">
-                Email
-              </Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="col-span-3 cursor-text"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-role" className="text-right">
-                Role
-              </Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="col-span-3 cursor-pointer">
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user" className="cursor-pointer">
-                    User
-                  </SelectItem>
-                  <SelectItem value="admin" className="cursor-pointer">
-                    Admin
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <DialogHeader>
+          <DialogTitle>Edit User</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              required
+            />
           </div>
-          <DialogFooter>
-            <Button type="submit" className="cursor-pointer">
-              Update User
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="role">Role</Label>
+            <Select value={formData.role} onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
             </Button>
-          </DialogFooter>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Updating...' : 'Update User'}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
