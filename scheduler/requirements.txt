@@ -1,0 +1,10 @@
+# This file is part of the Scheduler project.
+# It is used to specify the dependencies required for the project.
+fastapi==0.115.0
+uvicorn==0.30.6
+pymongo==4.8.0
+pydantic==2.8.2
+deap==1.4.1
+pytest==8.3.2
+structlog==24.4.0
+python-dateutil==2.9.0.post0
