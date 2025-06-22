@@ -89,7 +89,9 @@ export function ManageFaculty({ config, setConfig, isAdmin }: ManageFacultyProps
                     {faculty.availability && faculty.availability.length > 0
                       ? <div className="flex flex-col gap-1">
                           {faculty.availability.map((a, i) => (
-                            <span key={i} className="text-xs font-mono bg-muted/50 px-2 py-0.5 rounded">{`${a.day}: ${a.startTime} - ${a.endTime}`}</span>
+                            <span key={i} className="text-xs font-mono bg-muted/50 px-2 py-0.5 rounded">
+                              {a.day === 'ALL_DAYS' ? 'All Days' : a.day}: {a.startTime} - {a.endTime}
+                            </span>
                           ))}
                         </div>
                       : <span className="text-muted-foreground italic">Not specified</span>

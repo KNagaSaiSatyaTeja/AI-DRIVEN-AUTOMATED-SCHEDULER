@@ -5,37 +5,31 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { AddUserModal } from '@/components/AddUserModal';
+import { EditUserModal } from '@/components/EditUserModal';
+import { useState } from 'react';
 
 const usersData = [
   {
+    id: '1',
     name: 'Admin User',
     email: 'admin@example.com',
     avatar: 'https://i.pravatar.cc/150?u=admin',
     role: 'admin',
-  },
-  {
-    name: 'Standard User',
-    email: 'user@example.com',
-    avatar: 'https://i.pravatar.cc/150?u=user',
-    role: 'user',
-  },
-  {
-    name: 'Dr. Evelyn Reed',
-    email: 'e.reed@university.edu',
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-    role: 'faculty',
-  },
-  {
-    name: 'Prof. Samuel Tan',
-    email: 's.tan@university.edu',
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026705d',
-    role: 'faculty',
   },
 ];
 
 export default function Users() {
   const { role } = useApp();
   const isAdmin = role === 'admin';
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+
+  const handleEditUser = (user: any) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -47,7 +41,9 @@ export default function Users() {
           </p>
         </div>
         {isAdmin && (
-          <Button className="cursor-pointer">Add New User</Button>
+          <AddUserModal isOpen={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+            <Button className="cursor-pointer">Add New User</Button>
+          </AddUserModal>
         )}
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -70,13 +66,28 @@ export default function Users() {
               </div>
               {isAdmin && (
                 <div className="flex justify-end pt-2">
-                    <Button variant="outline" size="sm" className="cursor-pointer">Edit User</Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="cursor-pointer"
+                    onClick={() => handleEditUser(user)}
+                  >
+                    Edit User
+                  </Button>
                 </div>
               )}
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {selectedUser && (
+        <EditUserModal 
+          user={selectedUser}
+          isOpen={isEditModalOpen} 
+          onOpenChange={setIsEditModalOpen}
+        />
+      )}
     </div>
   );
 }

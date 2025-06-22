@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { getUniqueRooms } from '@/data/schedule';
@@ -28,10 +28,11 @@ import { useToast } from '@/components/ui/use-toast';
 import { useApp } from '@/context/AppContext';
 
 export default function Rooms() {
-  const { role } = useApp();
+  const { role, getTimetables } = useApp();
   const isAdmin = role === 'admin';
   const { toast } = useToast();
-  const [rooms, setRooms] = useState<string[]>(() => getUniqueRooms().sort());
+  const [rooms, setRooms] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const [isAddDialogOpen, setAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
@@ -40,12 +41,34 @@ export default function Rooms() {
   const [currentRoom, setCurrentRoom] = useState('');
   const [formValue, setFormValue] = useState('');
 
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const timetables = await getTimetables();
+        const uniqueRooms = getUniqueRooms(timetables);
+        setRooms(uniqueRooms);
+      } catch (error) {
+        console.error('Error fetching rooms:', error);
+        toast({ 
+          title: "Error", 
+          description: "Failed to fetch rooms from server.", 
+          variant: "destructive" 
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRooms();
+  }, [getTimetables, toast]);
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (formValue && !rooms.includes(formValue)) {
       setRooms(prev => [...prev, formValue].sort());
-      toast({ title: "Room added", description: `Room "${formValue}" has been added.` });
+      toast({ title: "Room added", description: `Room "${formValue}" has been added locally. Create a timetable to persist it.` });
       setAddDialogOpen(false);
+      setFormValue('');
     } else {
       toast({ title: "Error", description: "Room name cannot be empty or already exist.", variant: "destructive" });
     }
@@ -55,8 +78,9 @@ export default function Rooms() {
     e.preventDefault();
     if (formValue && (!rooms.includes(formValue) || formValue === currentRoom)) {
       setRooms(prev => prev.map(r => r === currentRoom ? formValue : r).sort());
-      toast({ title: "Room updated", description: `Room "${currentRoom}" has been updated to "${formValue}".` });
+      toast({ title: "Room updated", description: `Room "${currentRoom}" has been updated to "${formValue}" locally.` });
       setEditDialogOpen(false);
+      setFormValue('');
     } else {
       toast({ title: "Error", description: "Room name cannot be empty or already exist.", variant: "destructive" });
     }
@@ -64,9 +88,17 @@ export default function Rooms() {
 
   const handleDelete = () => {
     setRooms(prev => prev.filter(r => r !== currentRoom));
-    toast({ title: "Room deleted", description: `Room "${currentRoom}" has been deleted.` });
+    toast({ title: "Room deleted", description: `Room "${currentRoom}" has been removed locally.` });
     setAlertDialogOpen(false);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Loading rooms...</div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6">
@@ -74,7 +106,7 @@ export default function Rooms() {
         <div>
           <h1 className="text-2xl font-bold">Manage Rooms</h1>
           <p className="text-muted-foreground">
-            {isAdmin ? 'Add, edit, or delete rooms.' : 'Browse available rooms.'} Changes are temporary.
+            {isAdmin ? 'Add, edit, or delete rooms.' : 'Browse available rooms.'} Room data is loaded from timetables.
           </p>
         </div>
         {isAdmin && (
@@ -86,27 +118,33 @@ export default function Rooms() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {rooms.map((room) => (
-          <Card key={room}>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-3">
-                <Link to={`/rooms/${room}`} className="hover:underline">
-                  Room: {room}
-                </Link>
-              </CardTitle>
-              {isAdmin && (
-                <div className="flex items-center space-x-1">
-                  <Button variant="ghost" size="icon" onClick={() => { setCurrentRoom(room); setFormValue(room); setEditDialogOpen(true); }}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => { setCurrentRoom(room); setAlertDialogOpen(true); }}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              )}
-            </CardHeader>
-          </Card>
-        ))}
+        {rooms.length > 0 ? (
+          rooms.map((room) => (
+            <Card key={room}>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center gap-3">
+                  <Link to={`/rooms/${room}`} className="hover:underline">
+                    Room: {room}
+                  </Link>
+                </CardTitle>
+                {isAdmin && (
+                  <div className="flex items-center space-x-1">
+                    <Button variant="ghost" size="icon" onClick={() => { setCurrentRoom(room); setFormValue(room); setEditDialogOpen(true); }}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => { setCurrentRoom(room); setAlertDialogOpen(true); }}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                )}
+              </CardHeader>
+            </Card>
+          ))
+        ) : (
+          <div className="col-span-full text-center py-8">
+            <p className="text-muted-foreground">No rooms found. Create a timetable to add rooms.</p>
+          </div>
+        )}
       </div>
 
       {/* Add Room Dialog */}
@@ -162,7 +200,7 @@ export default function Rooms() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete room "{currentRoom}".
+              This action will remove room "{currentRoom}" from the local view. The room will still exist in saved timetables.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
