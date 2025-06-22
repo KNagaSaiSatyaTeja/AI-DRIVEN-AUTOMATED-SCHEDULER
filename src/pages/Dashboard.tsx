@@ -2,17 +2,43 @@
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { AddUserModal } from '@/components/AddUserModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getUniqueRooms } from '@/data/schedule';
 import { RoomSchedule } from '@/components/RoomSchedule';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
-  const { role } = useApp();
+  const { role, getTimetables } = useApp();
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [timetables, setTimetables] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const isAdmin = role === 'admin';
-  const rooms = getUniqueRooms();
+
+  useEffect(() => {
+    const fetchTimetables = async () => {
+      try {
+        const data = await getTimetables();
+        setTimetables(data);
+      } catch (error) {
+        console.error('Error fetching timetables:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTimetables();
+  }, [getTimetables]);
+
+  const rooms = getUniqueRooms(timetables);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Loading timetables...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -36,9 +62,15 @@ export default function Dashboard() {
       </div>
       
       <div className="space-y-6">
-        {rooms.map(room => (
-          <RoomSchedule key={room} roomId={room} />
-        ))}
+        {rooms.length > 0 ? (
+          rooms.map(room => (
+            <RoomSchedule key={room} roomId={room} />
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No rooms found. Create a timetable to get started.</p>
+          </div>
+        )}
       </div>
     </div>
   );
