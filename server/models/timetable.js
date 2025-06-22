@@ -1,28 +1,38 @@
 const mongoose = require("mongoose");
 
 const timeSlotSchema = new mongoose.Schema({
-  day: { type: String, required: true },
+  day: {
+    type: String,
+    required: true,
+    enum: [
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY",
+      "FRIDAY",
+      "SATURDAY",
+      "SUNDAY",
+    ],
+  },
   startTime: { type: String, required: true },
   endTime: { type: String, required: true },
 });
 
-const facultySchema = new mongoose.Schema({
-  id: { type: String, required: true },
-  name: { type: String, required: true },
-  availability: [timeSlotSchema],
-});
-
-const subjectSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  time: { type: Number, required: true },
-  noOfClassesPerWeek: { type: Number, required: true },
-  faculty: [facultySchema],
-  preferredSlots: [timeSlotSchema],
-  isSpecial: { type: Boolean, default: false },
-});
-
 const breakSchema = new mongoose.Schema({
-  day: { type: String, required: true },
+  day: {
+    type: String,
+    required: true,
+    enum: [
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY",
+      "FRIDAY",
+      "SATURDAY",
+      "SUNDAY",
+      "ALL_DAYS",
+    ],
+  },
   startTime: { type: String, required: true },
   endTime: { type: String, required: true },
 });
@@ -32,11 +42,8 @@ const collegeTimeSchema = new mongoose.Schema({
   endTime: { type: String, required: true },
 });
 
-const timetableSchema = new mongoose.Schema({
-  subjects: [subjectSchema],
-  breaks: [breakSchema],
-  collegeTime: collegeTimeSchema,
-  rooms: [{ type: String, required: true }],
+const roomScheduleSchema = new mongoose.Schema({
+  room: { type: String, required: true },
   schedule: [
     {
       subjectName: String,
@@ -50,6 +57,27 @@ const timetableSchema = new mongoose.Schema({
       priorityScore: Number,
     },
   ],
+});
+
+const timetableSchema = new mongoose.Schema({
+  subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
+  breaks: [breakSchema],
+  collegeTime: collegeTimeSchema,
+  rooms: [{ type: mongoose.Schema.Types.ObjectId, ref: "Room" }],
+  schedule: [
+    {
+      subjectName: String,
+      facultyId: String,
+      facultyName: String,
+      day: String,
+      startTime: String,
+      endTime: String,
+      roomId: String,
+      isSpecial: Boolean,
+      priorityScore: Number,
+    },
+  ],
+  roomWiseSchedules: [roomScheduleSchema],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
