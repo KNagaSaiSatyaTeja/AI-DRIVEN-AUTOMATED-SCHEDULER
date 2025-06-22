@@ -1,12 +1,153 @@
+// import { useState } from 'react';
+// import { TimetableConfig, FacultyConfig } from '@/data/schedule';
+// import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+// import { Button } from '@/components/ui/button';
+// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+// import { Plus, Edit, Trash2 } from 'lucide-react';
+// import { useToast } from "@/components/ui/use-toast";
+// import { EditFacultyModal } from './EditFacultyModal';
 
-import { useState } from 'react';
-import { TimetableConfig, FacultyConfig } from '@/data/schedule';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+// interface ManageFacultyProps {
+//   config: TimetableConfig;
+//   setConfig: (config: TimetableConfig) => void;
+//   isAdmin: boolean;
+// }
+
+// export function ManageFaculty({ config, setConfig, isAdmin }: ManageFacultyProps) {
+//   const { toast } = useToast();
+//   const [isModalOpen, setIsModalOpen] = useState(false);
+//   const [editingFaculty, setEditingFaculty] = useState<FacultyConfig | null>(null);
+
+//   const handleAddFaculty = () => {
+//     setEditingFaculty(null);
+//     setIsModalOpen(true);
+//   };
+
+//   const handleEditFaculty = (faculty: FacultyConfig) => {
+//     setEditingFaculty(faculty);
+//     setIsModalOpen(true);
+//   };
+
+//   const handleDeleteFaculty = (facultyId: string) => {
+//     // Check if faculty is assigned to any subject
+//     const isAssigned = config.subjects.some(s => s.facultyIds.includes(facultyId));
+//     if (isAssigned) {
+//       toast({
+//         title: "Cannot Delete Faculty",
+//         description: "This faculty member is assigned to one or more subjects. Please unassign them first.",
+//         variant: "destructive",
+//       });
+//       return;
+//     }
+//     setConfig({
+//       ...config,
+//       faculty: config.faculty.filter(f => f.id !== facultyId),
+//     });
+//   };
+
+//   const handleSaveFaculty = (faculty: FacultyConfig) => {
+//     const newFaculty = [...config.faculty];
+//     if (editingFaculty) {
+//       // Update
+//       const index = newFaculty.findIndex(f => f.id === faculty.id);
+//       if (index > -1) {
+//         newFaculty[index] = faculty;
+//       }
+//     } else {
+//       // Add
+//       newFaculty.push({ ...faculty, id: `f${Date.now()}` });
+//     }
+//     setConfig({ ...config, faculty: newFaculty });
+//     setIsModalOpen(false);
+//   };
+
+//   return (
+//     <>
+//       <Card>
+//         <CardHeader className="flex flex-row items-center justify-between">
+//           <div>
+//             <CardTitle>Manage Faculty</CardTitle>
+//             <CardDescription>Add, edit, or remove faculty members.</CardDescription>
+//           </div>
+//           {isAdmin && <Button size="sm" onClick={handleAddFaculty}><Plus className="mr-2" /> Add Faculty</Button>}
+//         </CardHeader>
+//         <CardContent>
+//           <Table>
+//             <TableHeader>
+//               <TableRow>
+//                 <TableHead>Name</TableHead>
+//                 <TableHead className="w-[40%]">Availability</TableHead>
+//                 {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+//               </TableRow>
+//             </TableHeader>
+//             <TableBody>
+//               {config.faculty.length > 0 ? config.faculty.map(faculty => (
+//                 <TableRow key={faculty.id}>
+//                   <TableCell className="font-medium">{faculty.name}</TableCell>
+//                   <TableCell>
+//                     {faculty.availability && faculty.availability.length > 0
+//                       ? <div className="flex flex-col gap-1">
+//                           {faculty.availability.map((a, i) => (
+//                             <span key={i} className="text-xs font-mono bg-muted/50 px-2 py-0.5 rounded">
+//                               {a.day === 'ALL_DAYS' ? 'All Days' : a.day}: {a.startTime} - {a.endTime}
+//                             </span>
+//                           ))}
+//                         </div>
+//                       : <span className="text-muted-foreground italic">Not specified</span>
+//                     }
+//                   </TableCell>
+//                   {isAdmin && (
+//                     <TableCell className="text-right">
+//                       <Button variant="ghost" size="icon" onClick={() => handleEditFaculty(faculty)}>
+//                         <Edit className="h-4 w-4" />
+//                       </Button>
+//                       <Button variant="ghost" size="icon" onClick={() => handleDeleteFaculty(faculty.id)}>
+//                         <Trash2 className="h-4 w-4 text-destructive" />
+//                       </Button>
+//                     </TableCell>
+//                   )}
+//                 </TableRow>
+//               )) : (
+//                 <TableRow>
+//                   <TableCell colSpan={isAdmin ? 3 : 2} className="text-center text-muted-foreground">No faculty added yet.</TableCell>
+//                 </TableRow>
+//               )}
+//             </TableBody>
+//           </Table>
+//         </CardContent>
+//       </Card>
+//       <EditFacultyModal
+//         isOpen={isModalOpen}
+//         onOpenChange={setIsModalOpen}
+//         faculty={editingFaculty}
+//         onSave={handleSaveFaculty}
+//       />
+//     </>
+//   );
+// }
+import { useState, useEffect, useCallback } from "react";
+import { TimetableConfig, FacultyConfig } from "@/data/schedule";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Plus, Edit, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { EditFacultyModal } from './EditFacultyModal';
+import { EditFacultyModal } from "./EditFacultyModal";
+import { useApp } from "@/context/AppContext";
+import axios from "axios";
 
 interface ManageFacultyProps {
   config: TimetableConfig;
@@ -14,10 +155,39 @@ interface ManageFacultyProps {
   isAdmin: boolean;
 }
 
-export function ManageFaculty({ config, setConfig, isAdmin }: ManageFacultyProps) {
+export function ManageFaculty({
+  config,
+  setConfig,
+  isAdmin,
+}: ManageFacultyProps) {
+  const { selectedRoom, setIsLoading } = useApp();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingFaculty, setEditingFaculty] = useState<FacultyConfig | null>(null);
+  const [editingFaculty, setEditingFaculty] = useState<FacultyConfig | null>(
+    null
+  );
+  const [faculty, setFaculty] = useState<FacultyConfig[]>([]);
+
+  const fetchFaculty = useCallback(async () => {
+    if (!selectedRoom) return;
+    setIsLoading(true);
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_APP_API_BASE_URL}/faculty/room/${selectedRoom}`
+      );
+      setFaculty(response.data);
+    } catch (error) {
+      console.error("Error fetching faculty:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedRoom, setIsLoading]);
+
+  useEffect(() => {
+    if (selectedRoom) {
+      fetchFaculty();
+    }
+  }, [selectedRoom, fetchFaculty]);
 
   const handleAddFaculty = () => {
     setEditingFaculty(null);
@@ -29,37 +199,54 @@ export function ManageFaculty({ config, setConfig, isAdmin }: ManageFacultyProps
     setIsModalOpen(true);
   };
 
-  const handleDeleteFaculty = (facultyId: string) => {
-    // Check if faculty is assigned to any subject
-    const isAssigned = config.subjects.some(s => s.facultyIds.includes(facultyId));
-    if (isAssigned) {
+  const handleDeleteFaculty = async (facultyId: string) => {
+    if (!selectedRoom) return;
+    setIsLoading(true);
+    try {
+      await axios.delete(
+        `${
+          import.meta.env.VITE_APP_API_BASE_URL
+        }/faculty/room/${selectedRoom}/${facultyId}`
+      );
+      fetchFaculty();
+    } catch (error) {
       toast({
         title: "Cannot Delete Faculty",
-        description: "This faculty member is assigned to one or more subjects. Please unassign them first.",
+        description:
+          "This faculty member is assigned to one or more subjects. Please unassign them first.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
-    setConfig({
-      ...config,
-      faculty: config.faculty.filter(f => f.id !== facultyId),
-    });
   };
 
-  const handleSaveFaculty = (faculty: FacultyConfig) => {
-    const newFaculty = [...config.faculty];
-    if (editingFaculty) {
-      // Update
-      const index = newFaculty.findIndex(f => f.id === faculty.id);
-      if (index > -1) {
-        newFaculty[index] = faculty;
+  const handleSaveFaculty = async (faculty: FacultyConfig) => {
+    if (!selectedRoom) return;
+    setIsLoading(true);
+    try {
+      if (editingFaculty) {
+        await axios.put(
+          `${
+            import.meta.env.VITE_APP_API_BASE_URL
+          }/faculty/room/${selectedRoom}/${faculty.id}`,
+          faculty
+        );
+      } else {
+        await axios.post(
+          `${
+            import.meta.env.VITE_APP_API_BASE_URL
+          }/faculty/room/${selectedRoom}`,
+          { ...faculty, id: `f${Date.now()}` }
+        );
       }
-    } else {
-      // Add
-      newFaculty.push({ ...faculty, id: `f${Date.now()}` });
+      fetchFaculty();
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error saving faculty:", error);
+    } finally {
+      setIsLoading(false);
     }
-    setConfig({ ...config, faculty: newFaculty });
-    setIsModalOpen(false);
   };
 
   return (
@@ -68,9 +255,15 @@ export function ManageFaculty({ config, setConfig, isAdmin }: ManageFacultyProps
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Manage Faculty</CardTitle>
-            <CardDescription>Add, edit, or remove faculty members.</CardDescription>
+            <CardDescription>
+              Add, edit, or remove faculty members.
+            </CardDescription>
           </div>
-          {isAdmin && <Button size="sm" onClick={handleAddFaculty}><Plus className="mr-2" /> Add Faculty</Button>}
+          {isAdmin && (
+            <Button size="sm" onClick={handleAddFaculty}>
+              <Plus className="mr-2" /> Add Faculty
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <Table>
@@ -78,39 +271,66 @@ export function ManageFaculty({ config, setConfig, isAdmin }: ManageFacultyProps
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead className="w-[40%]">Availability</TableHead>
-                {isAdmin && <TableHead className="text-right">Actions</TableHead>}
+                {isAdmin && (
+                  <TableHead className="text-right">Actions</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {config.faculty.length > 0 ? config.faculty.map(faculty => (
-                <TableRow key={faculty.id}>
-                  <TableCell className="font-medium">{faculty.name}</TableCell>
-                  <TableCell>
-                    {faculty.availability && faculty.availability.length > 0
-                      ? <div className="flex flex-col gap-1">
+              {faculty.length > 0 ? (
+                faculty.map((faculty) => (
+                  <TableRow key={faculty.id}>
+                    <TableCell className="font-medium">
+                      {faculty.name}
+                    </TableCell>
+                    <TableCell>
+                      {faculty.availability &&
+                      faculty.availability.length > 0 ? (
+                        <div className="flex flex-col gap-1">
                           {faculty.availability.map((a, i) => (
-                            <span key={i} className="text-xs font-mono bg-muted/50 px-2 py-0.5 rounded">
-                              {a.day === 'ALL_DAYS' ? 'All Days' : a.day}: {a.startTime} - {a.endTime}
+                            <span
+                              key={i}
+                              className="text-xs font-mono bg-muted/50 px-2 py-0.5 rounded"
+                            >
+                              {a.day === "ALL_DAYS" ? "All Days" : a.day}:{" "}
+                              {a.startTime} - {a.endTime}
                             </span>
                           ))}
                         </div>
-                      : <span className="text-muted-foreground italic">Not specified</span>
-                    }
-                  </TableCell>
-                  {isAdmin && (
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => handleEditFaculty(faculty)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteFaculty(faculty.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      ) : (
+                        <span className="text-muted-foreground italic">
+                          Not specified
+                        </span>
+                      )}
                     </TableCell>
-                  )}
-                </TableRow>
-              )) : (
+                    {isAdmin && (
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditFaculty(faculty)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteFaculty(faculty.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
+              ) : (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 3 : 2} className="text-center text-muted-foreground">No faculty added yet.</TableCell>
+                  <TableCell
+                    colSpan={isAdmin ? 3 : 2}
+                    className="text-center text-muted-foreground"
+                  >
+                    No faculty added yet.
+                  </TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -121,7 +341,7 @@ export function ManageFaculty({ config, setConfig, isAdmin }: ManageFacultyProps
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}
         faculty={editingFaculty}
-        onSave={handleSaveFaculty}
+        onSaveSuccess={fetchFaculty}
       />
     </>
   );

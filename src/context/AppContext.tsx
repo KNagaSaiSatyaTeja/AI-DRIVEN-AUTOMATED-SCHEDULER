@@ -1,7 +1,24 @@
-
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { ScheduleEntry, TimetableConfig, SubjectConfig, FacultyConfig, initialTimeSlots } from '@/data/schedule';
-import axios from 'axios';
+import { ScheduleEntry, TimetableConfig, SubjectConfig, FacultyConfig, initialTimeSlots, configDays, CollegeTime, BreakConfig, FacultyAvailability } from '@/data/schedule';
+import axios, { AxiosError } from 'axios';
+
+// Import types from backend models (assumed based on previous response)
+interface RoomSchedule {
+  room: string;
+  schedule: ScheduleEntry[];
+}
+
+interface Timetable {
+  _id: string;
+  subjects: string[]; // Array of subject IDs
+  breaks: BreakConfig[];
+  collegeTime: CollegeTime;
+  rooms: string[]; // Array of room IDs
+  schedule: ScheduleEntry[];
+  roomWiseSchedules: RoomSchedule[];
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 type Role = 'admin' | 'user';
 
@@ -11,13 +28,13 @@ interface AppContextType {
   logout: () => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
-  generateSchedule: (payload: any) => Promise<{ success: boolean, message: string }>;
-  // Timetable operations
-  getTimetables: () => Promise<any[]>;
-  createTimetable: (data: any) => Promise<any>;
-  updateTimetable: (id: string, data: any) => Promise<any>;
-  timetables: any[];
-  // Schedule operations
+  selectedRoom: string | null;
+  setSelectedRoom: (roomId: string | null) => void;
+  generateSchedule: (payload: TimetableConfig) => Promise<{ success: boolean; message: string }>;
+  getTimetables: (roomId?: string) => Promise<Timetable[]>;
+  createTimetable: (roomId: string, data: TimetableConfig) => Promise<Timetable>;
+  updateTimetable: (roomId: string, id: string, data: TimetableConfig) => Promise<Timetable>;
+  timetables: Timetable[];
   schedule: ScheduleEntry[];
   timeSlots: string[];
   updateSchedule: (entry: ScheduleEntry) => void;
@@ -29,19 +46,20 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [role, setRole] = useState<Role | null>('admin'); // Default to admin for now
+  const [role, setRole] = useState<Role | null>('admin');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [timeSlots] = useState<string[]>(initialTimeSlots);
-  const [timetables, setTimetables] = useState<any[]>([]);
+  const [timetables, setTimetables] = useState<Timetable[]>([]);
 
   const logout = () => {
     setRole(null);
   };
 
-  const getTimetables = async (): Promise<any[]> => {
+  const getTimetables = async (roomId?: string): Promise<Timetable[]> => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/timetable`);
+      const response = await axios.get<Timetable[]>(roomId ? `${API_BASE_URL}/timetable/room/${roomId}` : `${API_BASE_URL}/timetable`);
       setTimetables(response.data);
       return response.data;
     } catch (error) {
@@ -50,9 +68,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const createTimetable = async (data: any): Promise<any> => {
+  const createTimetable = async (roomId: string, data: TimetableConfig): Promise<Timetable> => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/timetable/generate`, data);
+      const response = await axios.post<Timetable>(`${API_BASE_URL}/timetable/room/${roomId}/generate`, data);
       return response.data;
     } catch (error) {
       console.error('Error creating timetable:', error);
@@ -60,9 +78,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateTimetable = async (id: string, data: any): Promise<any> => {
+  const updateTimetable = async (roomId: string, id: string, data: TimetableConfig): Promise<Timetable> => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/timetable/${id}`, data);
+      const response = await axios.put<Timetable>(`${API_BASE_URL}/timetable/room/${roomId}/${id}`, data);
       return response.data;
     } catch (error) {
       console.error('Error updating timetable:', error);
@@ -70,18 +88,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const generateSchedule = async (payload: any): Promise<{ success: boolean; message: string }> => {
+  const generateSchedule = async (payload: TimetableConfig): Promise<{ success: boolean; message: string }> => {
     console.log("Sending payload for timetable generation:", JSON.stringify(payload, null, 2));
+    if (!selectedRoom) throw new Error('No room selected');
     setIsLoading(true);
 
     try {
-      const response = await createTimetable(payload);
+      const response = await createTimetable(selectedRoom, payload);
+      await getTimetables(selectedRoom);
       setIsLoading(false);
       return { success: true, message: 'New timetable generated successfully!' };
     } catch (error) {
       console.error("Failed to generate timetable:", error);
       setIsLoading(false);
-      if (axios.isAxiosError(error)) {
+      if (error instanceof AxiosError) {
         const errorMessage = error.response?.data?.message || error.message || 'Unknown server error';
         return { success: false, message: `Generation failed: ${errorMessage}` };
       }
@@ -94,7 +114,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const existingIndex = prev.findIndex(
         e => e.day === entry.day && e.time === entry.time && e.room === entry.room
       );
-      
       if (existingIndex >= 0) {
         const updated = [...prev];
         updated[existingIndex] = entry;
@@ -111,12 +130,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  useEffect(() => {
+    if (selectedRoom) {
+      getTimetables(selectedRoom);
+    }
+  }, [selectedRoom]);
+
   const value = { 
     role, 
     setRole, 
     logout, 
     isLoading, 
     setIsLoading, 
+    selectedRoom, 
+    setSelectedRoom,
     generateSchedule,
     getTimetables,
     createTimetable,

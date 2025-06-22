@@ -12,7 +12,12 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
 
     const hashedPassword = await hashPassword(password);
-    const user = new User({ name, email, password: hashedPassword, role:"user" });
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      role: "user",
+    });
     await user.save();
     res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
@@ -32,7 +37,7 @@ router.post("/login", async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
-    res.json({ token });
+    res.json({ token, role: user.role });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

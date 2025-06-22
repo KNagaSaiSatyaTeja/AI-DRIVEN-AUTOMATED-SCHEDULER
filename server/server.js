@@ -16,6 +16,7 @@ connectDB();
 
 const initializeAdmin = async () => {
   try {
+    console.log("inside initializeAdmin");
     const adminCount = await User.countDocuments({ role: "admin" });
     if (adminCount === 0) {
       const hashedPassword = await hashPassword("admin@123");
@@ -27,6 +28,9 @@ const initializeAdmin = async () => {
       });
       await admin.save();
       console.log("Default admin created: admin@admin.com / admin@123");
+    }
+    else {
+      console.log("Admin user already exists.");
     }
   } catch (error) {
     console.error("Error initializing admin:", error.message);
