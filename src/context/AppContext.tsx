@@ -16,6 +16,7 @@ interface AppContextType {
   getTimetables: () => Promise<any[]>;
   createTimetable: (data: any) => Promise<any>;
   updateTimetable: (id: string, data: any) => Promise<any>;
+  timetables: any[];
   // Schedule operations
   schedule: ScheduleEntry[];
   timeSlots: string[];
@@ -32,6 +33,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [timeSlots] = useState<string[]>(initialTimeSlots);
+  const [timetables, setTimetables] = useState<any[]>([]);
 
   const logout = () => {
     setRole(null);
@@ -40,6 +42,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const getTimetables = async (): Promise<any[]> => {
     try {
       const response = await axios.get(`${API_BASE_URL}/timetable`);
+      setTimetables(response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching timetables:', error);
@@ -118,6 +121,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     getTimetables,
     createTimetable,
     updateTimetable,
+    timetables,
     schedule,
     timeSlots,
     updateSchedule,
