@@ -33,7 +33,7 @@ export function RoomSchedule({ roomId }: RoomScheduleProps) {
                 <div>
                     <h4 className="font-semibold mb-2 text-sm text-muted-foreground">Subjects</h4>
                     <div className="flex flex-wrap gap-2">
-                        {subjects.map(s => <Badge key={s} variant="secondary">{s}</Badge>)}
+                        {subjects.map((s, index) => <Badge key={`subject-${index}`} variant="secondary">{s}</Badge>)}
                     </div>
                 </div>
             )}
@@ -41,7 +41,7 @@ export function RoomSchedule({ roomId }: RoomScheduleProps) {
                 <div>
                     <h4 className="font-semibold mb-2 text-sm text-muted-foreground">Faculty</h4>
                     <div className="flex flex-wrap gap-2">
-                        {faculty.map(f => <Badge key={f} variant="outline">{f}</Badge>)}
+                        {faculty.map((f, index) => <Badge key={`faculty-${index}`} variant="outline">{f}</Badge>)}
                     </div>
                 </div>
             )}

@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { ScheduleEntry, TimetableConfig, SubjectConfig, FacultyConfig } from '@/data/schedule';
+import { ScheduleEntry, TimetableConfig, SubjectConfig, FacultyConfig, initialTimeSlots } from '@/data/schedule';
 import axios from 'axios';
 
 type Role = 'admin' | 'user';
@@ -16,6 +16,11 @@ interface AppContextType {
   getTimetables: () => Promise<any[]>;
   createTimetable: (data: any) => Promise<any>;
   updateTimetable: (id: string, data: any) => Promise<any>;
+  // Schedule operations
+  schedule: ScheduleEntry[];
+  timeSlots: string[];
+  updateSchedule: (entry: ScheduleEntry) => void;
+  deleteSchedule: (entry: ScheduleEntry) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -25,6 +30,8 @@ const API_BASE_URL = 'http://localhost:5000/api';
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<Role | null>('admin'); // Default to admin for now
   const [isLoading, setIsLoading] = useState(false);
+  const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
+  const [timeSlots] = useState<string[]>(initialTimeSlots);
 
   const logout = () => {
     setRole(null);
@@ -79,6 +86,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateSchedule = (entry: ScheduleEntry) => {
+    setSchedule(prev => {
+      const existingIndex = prev.findIndex(
+        e => e.day === entry.day && e.time === entry.time && e.room === entry.room
+      );
+      
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = entry;
+        return updated;
+      } else {
+        return [...prev, entry];
+      }
+    });
+  };
+
+  const deleteSchedule = (entry: ScheduleEntry) => {
+    setSchedule(prev => 
+      prev.filter(e => !(e.day === entry.day && e.time === entry.time && e.room === entry.room))
+    );
+  };
+
   const value = { 
     role, 
     setRole, 
@@ -88,7 +117,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     generateSchedule,
     getTimetables,
     createTimetable,
-    updateTimetable
+    updateTimetable,
+    schedule,
+    timeSlots,
+    updateSchedule,
+    deleteSchedule
   };
 
   return (
