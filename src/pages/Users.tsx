@@ -92,7 +92,6 @@ export default function Users() {
           <AddUserModal
             isOpen={isAddModalOpen}
             onOpenChange={setIsAddModalOpen}
-            onUserAdded={refreshUsers}
           >
             <Button className="cursor-pointer">Add New User</Button>
           </AddUserModal>

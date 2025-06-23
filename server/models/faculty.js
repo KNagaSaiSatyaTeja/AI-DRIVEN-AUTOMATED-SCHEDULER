@@ -20,7 +20,6 @@ const timeSlotSchema = new mongoose.Schema({
 });
 
 const facultySchema = new mongoose.Schema({
-  facultyId: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   room: { type: mongoose.Schema.Types.ObjectId, ref: "Room", required: true },
   availability: [timeSlotSchema],

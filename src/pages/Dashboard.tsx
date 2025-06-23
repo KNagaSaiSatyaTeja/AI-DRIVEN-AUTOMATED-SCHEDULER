@@ -83,7 +83,6 @@ export default function Dashboard() {
             <AddUserModal
               isOpen={isUserModalOpen}
               onOpenChange={setIsUserModalOpen}
-              onUserAdded={refreshTimetables}
             >
               <Button
                 onClick={() => setIsUserModalOpen(true)}

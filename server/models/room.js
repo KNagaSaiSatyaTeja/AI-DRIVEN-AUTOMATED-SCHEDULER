@@ -1,8 +1,7 @@
 const mongoose = require("mongoose");
 
 const roomSchema = new mongoose.Schema({
-  roomId: { type: String, required: true, unique: true },
-  name: { type: String, required: true },
+  name: { type: String, required: true, unique: true }, // Use name as the unique identifier for display
   capacity: { type: Number, default: null },
   subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
   faculty: [{ type: mongoose.Schema.Types.ObjectId, ref: "Faculty" }],

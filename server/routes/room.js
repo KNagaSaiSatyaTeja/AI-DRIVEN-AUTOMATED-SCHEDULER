@@ -4,16 +4,19 @@ const { Room, Subject, Faculty } = require("../models");
 const { auth, adminOnly } = require("../middleware/auth");
 
 router.post("/", [auth, adminOnly], async (req, res) => {
-  const { roomId, name, capacity } = req.body;
+  const { name, capacity } = req.body;
   try {
-    const existingRoom = await Room.findOne({ roomId });
+    const existingRoom = await Room.findOne({ name });
     if (existingRoom)
-      return res.status(400).json({ message: "Room already exists" });
-    const room = new Room({ roomId, name, capacity });
+      return res
+        .status(400)
+        .json({ message: "Room with this name already exists" });
+    const room = new Room({ name, capacity });
     await room.save();
-    res
-      .status(201)
-      .json({ message: "Room created", room: { roomId, name, capacity } });
+    res.status(201).json({
+      message: "Room created",
+      room: { _id: room._id, name, capacity },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -23,19 +26,20 @@ router.get("/", auth, async (req, res) => {
   try {
     const rooms = await Room.find()
       .populate("subjects faculty")
-      .select("roomId name capacity subjects faculty createdAt updatedAt");
+      .select("_id name capacity subjects faculty createdAt updatedAt");
     res.json(rooms);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-router.get("/:roomId", auth, async (req, res) => {
-  const { roomId } = req.params;
+router.get("/:id", auth, async (req, res) => {
+  const { id } = req.params;
   try {
-    const room = await Room.findOne({ roomId })
+    console.log("Fetching room with ID:", id);
+    const room = await Room.findById(id)
       .populate("subjects faculty")
-      .select("roomId name capacity subjects faculty createdAt updatedAt");
+      .select("_id name capacity subjects faculty createdAt updatedAt");
     if (!room) return res.status(404).json({ message: "Room not found" });
     res.json(room);
   } catch (error) {
@@ -43,12 +47,12 @@ router.get("/:roomId", auth, async (req, res) => {
   }
 });
 
-router.put("/:roomId", [auth, adminOnly], async (req, res) => {
-  const { roomId } = req.params;
+router.put("/:_id", [auth, adminOnly], async (req, res) => {
+  const { _id } = req.params;
   const { name, capacity } = req.body;
   try {
-    const room = await Room.findOneAndUpdate(
-      { roomId },
+    const room = await Room.findByIdAndUpdate(
+      _id,
       { name, capacity, updatedAt: Date.now() },
       { new: true }
     ).populate("subjects faculty");
@@ -59,10 +63,10 @@ router.put("/:roomId", [auth, adminOnly], async (req, res) => {
   }
 });
 
-router.delete("/:roomId", [auth, adminOnly], async (req, res) => {
-  const { roomId } = req.params;
+router.delete("/:_id", [auth, adminOnly], async (req, res) => {
+  const { _id } = req.params;
   try {
-    const room = await Room.findOne({ roomId });
+    const room = await Room.findById(_id);
     if (!room) return res.status(404).json({ message: "Room not found" });
     const subjects = await Subject.find({ room: room._id });
     const faculty = await Faculty.find({ room: room._id });

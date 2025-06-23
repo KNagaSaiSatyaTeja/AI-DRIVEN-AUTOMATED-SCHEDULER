@@ -65,6 +65,7 @@ facultyIds: string[];
 }
 
 export interface TimetableConfig {
+name: string;
 collegeTime: CollegeTime;
 breaks: BreakConfig[];
 rooms: string[]; // Single room for now, based on selectedRoom
