@@ -41,7 +41,7 @@ export function AddUserModal({ children, isOpen, onOpenChange, onUserAdded }: Ad
     setIsLoading(true);
     try {
       await axios.post(
-        `${import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api'}/users`,
+        `${import.meta.env.VITE_APP_API_BASE_URL}/users`,
         formData,
         {
           headers: {

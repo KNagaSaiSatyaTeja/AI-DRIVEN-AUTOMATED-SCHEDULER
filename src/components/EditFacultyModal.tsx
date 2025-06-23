@@ -119,7 +119,7 @@ export function EditFacultyModal({
       form.reset({ name: "", availability: [] });
     }
     console.log("Form reset with:", { faculty, selectedRoom }); // Debug reset
-  }, [faculty, isOpen, form]);
+  }, [faculty, isOpen, form, selectedRoom]);
 
   const onSubmit = async (data: FacultyFormValues) => {
     if (!selectedRoom) {
