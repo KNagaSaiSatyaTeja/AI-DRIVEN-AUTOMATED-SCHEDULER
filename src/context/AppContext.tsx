@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { ScheduleEntry, TimetableConfig, SubjectConfig, FacultyConfig, initialTimeSlots, configDays, CollegeTime, BreakConfig, FacultyAvailability } from '@/data/schedule';
-import axios, { AxiosError } from 'axios';
+import { ScheduleEntry, TimetableConfig, initialTimeSlots } from '@/data/schedule';
+import { timetableAPI } from '@/services/api';
 
 // Import types from backend models (assumed based on previous response)
 interface RoomSchedule {
@@ -12,8 +12,8 @@ interface RoomSchedule {
 interface Timetable {
   _id: string;
   subjects: string[]; // Array of subject IDs
-  breaks: BreakConfig[];
-  collegeTime: CollegeTime;
+  breaks: any[];
+  collegeTime: any;
   rooms: string[]; // Array of room IDs
   schedule: ScheduleEntry[];
   roomWiseSchedules: RoomSchedule[];
@@ -46,8 +46,6 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api';
-
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRoleState] = useState<Role | null>(null);
   const [token, setTokenState] = useState<string | null>(null);
@@ -67,14 +65,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setRoleState(storedRole);
     }
   }, []);
-
-  // Create axios instance with token
-  const createAuthenticatedAxios = () => {
-    return axios.create({
-      baseURL: API_BASE_URL,
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    });
-  };
 
   const setRole = (newRole: Role | null) => {
     setRoleState(newRole);
@@ -99,16 +89,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setTokenState(null);
     localStorage.removeItem('token');
     localStorage.removeItem('role');
-    // Clear other unnecessary data
     localStorage.clear();
   };
 
   const getTimetables = async (roomId?: string): Promise<Timetable[]> => {
     try {
-      const api = createAuthenticatedAxios();
-      const response = await api.get<Timetable[]>(roomId ? `/timetable/room/${roomId}` : '/timetable');
-      setTimetables(response.data);
-      return response.data;
+      const data = await timetableAPI.getAll(roomId);
+      setTimetables(data);
+      return data;
     } catch (error) {
       console.error('Error fetching timetables:', error);
       return [];
@@ -117,9 +105,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const createTimetable = async (roomId: string, data: TimetableConfig): Promise<Timetable> => {
     try {
-      const api = createAuthenticatedAxios();
-      const response = await api.post<Timetable>(`/timetable/room/${roomId}/generate`, data);
-      return response.data;
+      const response = await timetableAPI.generate(roomId, data);
+      return response;
     } catch (error) {
       console.error('Error creating timetable:', error);
       throw error;
@@ -128,9 +115,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const updateTimetable = async (roomId: string, id: string, data: TimetableConfig): Promise<Timetable> => {
     try {
-      const api = createAuthenticatedAxios();
-      const response = await api.put<Timetable>(`/timetable/room/${roomId}/${id}`, data);
-      return response.data;
+      const response = await timetableAPI.update(roomId, id, data);
+      return response;
     } catch (error) {
       console.error('Error updating timetable:', error);
       throw error;
@@ -147,14 +133,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       await getTimetables(selectedRoom);
       setIsLoading(false);
       return { success: true, message: 'New timetable generated successfully!' };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to generate timetable:", error);
       setIsLoading(false);
-      if (error instanceof AxiosError) {
-        const errorMessage = error.response?.data?.message || error.message || 'Unknown server error';
-        return { success: false, message: `Generation failed: ${errorMessage}` };
-      }
-      return { success: false, message: 'An unexpected error occurred while generating the timetable.' };
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown server error';
+      return { success: false, message: `Generation failed: ${errorMessage}` };
     }
   };
 

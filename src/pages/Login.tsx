@@ -36,6 +36,7 @@ const LoginPage = () => {
   const { setRole, setToken } = useApp();
   const navigate = useNavigate();
   const [isRegister, setIsRegister] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,18 +47,33 @@ const LoginPage = () => {
     },
   });
 
+  const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api';
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    console.log("Submitting form with values:", values);
+    console.log("API Base URL:", API_BASE_URL);
+    
     try {
       if (isRegister) {
+        console.log("Attempting registration...");
         // Register user
-        await axios.post(
-          `${import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api'}/auth/register`,
+        const registerResponse = await axios.post(
+          `${API_BASE_URL}/auth/register`,
           {
             name: values.name,
             email: values.email,
             password: values.password,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            timeout: 10000,
           }
         );
+        
+        console.log("Registration successful:", registerResponse.data);
         
         toast({
           title: "Registration Successful",
@@ -67,33 +83,69 @@ const LoginPage = () => {
         setIsRegister(false);
         form.reset();
       } else {
+        console.log("Attempting login...");
         // Login user
-        const response = await axios.post(
-          `${import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api'}/auth/login`,
+        const loginResponse = await axios.post(
+          `${API_BASE_URL}/auth/login`,
           {
             email: values.email,
             password: values.password,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            timeout: 10000,
           }
         );
-        const { role, token } = response.data;
+        
+        console.log("Login response:", loginResponse.data);
+        
+        const { role, token } = loginResponse.data;
+        
+        if (!token) {
+          throw new Error("No token received from server");
+        }
+        
+        // Store token and role
+        localStorage.setItem('token', token);
+        localStorage.setItem('role', role);
         
         setRole(role);
         setToken(token);
+        
+        console.log("Login successful, role:", role, "token:", token.substring(0, 20) + "...");
         
         toast({
           title: "Login Successful",
           description: `Welcome back, ${role === "admin" ? "Admin" : "User"}!`,
         });
+        
         navigate("/");
       }
     } catch (error) {
+      console.error("Authentication error:", error);
+      
+      let errorMessage = "An unexpected error occurred";
+      
+      if (axios.isAxiosError(error)) {
+        if (error.code === 'ECONNREFUSED' || error.code === 'ERR_NETWORK') {
+          errorMessage = "Cannot connect to server. Please check if the backend is running.";
+        } else if (error.response) {
+          errorMessage = error.response.data?.message || `Server error: ${error.response.status}`;
+          console.log("Server response:", error.response.data);
+        } else if (error.request) {
+          errorMessage = "No response from server. Please try again.";
+        }
+      }
+      
       toast({
         variant: "destructive",
-        title: isRegister ? "Registration Failed" : "Invalid Credentials",
-        description: isRegister 
-          ? "Please try again with different credentials."
-          : "Please check your email and password.",
+        title: isRegister ? "Registration Failed" : "Login Failed",
+        description: errorMessage,
       });
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -162,8 +214,8 @@ const LoginPage = () => {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                {isRegister ? "Register" : "Login"}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Please wait..." : (isRegister ? "Register" : "Login")}
               </Button>
             </form>
           </Form>
@@ -176,6 +228,7 @@ const LoginPage = () => {
                 form.reset();
               }}
               className="text-sm"
+              disabled={isLoading}
             >
               {isRegister 
                 ? "Already have an account? Login" 
@@ -190,6 +243,10 @@ const LoginPage = () => {
               <p>Admin: admin@admin.com / admin@123</p>
             </div>
           )}
+          
+          <div className="mt-4 text-center text-xs text-muted-foreground">
+            <p>Backend URL: {API_BASE_URL}</p>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -25,10 +25,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useApp } from "@/context/AppContext";
-import axios from "axios";
+import { roomsAPI } from "@/services/api";
 
 export default function Rooms() {
-  const { role, getTimetables, setIsLoading } = useApp();
+  const { role, setIsLoading } = useApp();
   const isAdmin = role === "admin";
   const { toast } = useToast();
   const [rooms, setRooms] = useState<{ _id: string; name: string }[]>([]);
@@ -45,24 +45,17 @@ export default function Rooms() {
     const fetchRooms = async () => {
       setIsLoading(true);
       try {
-        console.log(
-          "Fetching rooms from server...",
-          import.meta.env.VITE_APP_API_BASE_URL
-        );
-        const response = await axios.get(
-          `${import.meta.env.VITE_APP_API_BASE_URL}/rooms`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        // Map response.data to extract _id and name
-        const roomData = response.data.map((room: any) => ({
+        console.log("Fetching rooms from API...");
+        const data = await roomsAPI.getAll();
+        
+        // Map response data to extract _id and name
+        const roomData = data.map((room: any) => ({
           _id: room._id,
           name: room.name,
         }));
+        
         setRooms(roomData.sort((a, b) => a.name.localeCompare(b.name)));
+        console.log("Rooms fetched successfully:", roomData);
       } catch (error) {
         console.error("Error fetching rooms:", error);
         toast({
@@ -72,7 +65,7 @@ export default function Rooms() {
         });
       } finally {
         setIsLoading(false);
-        setLoading(false); // Ensure loading state is cleared
+        setLoading(false);
       }
     };
 
@@ -84,24 +77,18 @@ export default function Rooms() {
     if (formValue && !rooms.some((r) => r.name === formValue)) {
       setIsLoading(true);
       try {
-        const response = await axios.post(
-          `${import.meta.env.VITE_APP_API_BASE_URL}/rooms`,
-          {
-            name: formValue,
-            capacity: 30, // Default capacity, adjust as needed
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        const newRoom = response.data.room;
+        const response = await roomsAPI.create({
+          name: formValue,
+          capacity: 30, // Default capacity
+        });
+        
+        const newRoom = response.room;
         setRooms((prev) =>
           [...prev, { _id: newRoom._id, name: newRoom.name }].sort((a, b) =>
             a.name.localeCompare(b.name)
           )
         );
+        
         toast({
           title: "Room added",
           description: `Room "${newRoom.name}" has been added.`,
@@ -137,16 +124,9 @@ export default function Rooms() {
     ) {
       setIsLoading(true);
       try {
-        const response = await axios.put(
-          `${import.meta.env.VITE_APP_API_BASE_URL}/rooms/${currentRoom._id}`,
-          { name: formValue },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        const updatedRoom = response.data.room;
+        const response = await roomsAPI.update(currentRoom._id, { name: formValue });
+        
+        const updatedRoom = response.room;
         setRooms((prev) =>
           prev
             .map((r) =>
@@ -156,7 +136,9 @@ export default function Rooms() {
             )
             .sort((a, b) => a.name.localeCompare(b.name))
         );
+        
         setCurrentRoom({ _id: updatedRoom._id, name: updatedRoom.name });
+        
         toast({
           title: "Room updated",
           description: `Room "${currentRoom.name}" has been updated to "${updatedRoom.name}".`,
@@ -187,16 +169,11 @@ export default function Rooms() {
     
     setIsLoading(true);
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_APP_API_BASE_URL}/rooms/${currentRoom._id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      await roomsAPI.delete(currentRoom._id);
+      
       setRooms((prev) => prev.filter((r) => r._id !== currentRoom._id));
       setCurrentRoom(null);
+      
       toast({
         title: "Room deleted",
         description: `Room "${currentRoom.name}" has been removed.`,
