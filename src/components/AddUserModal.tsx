@@ -12,23 +12,72 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/components/ui/use-toast';
 import { useApp } from '@/context/AppContext';
 import React, { useState } from 'react';
+import axios from 'axios';
 
-export function AddUserModal({ children, isOpen, onOpenChange }: { children: React.ReactNode, isOpen: boolean, onOpenChange: (isOpen: boolean) => void }) {
-  const { setIsLoading } = useApp();
-  const [name, setName] = useState('');
-  
-  const handleSubmit = (e: React.FormEvent) => {
+interface AddUserModalProps {
+  children: React.ReactNode;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onUserAdded?: () => void;
+}
+
+export function AddUserModal({ children, isOpen, onOpenChange, onUserAdded }: AddUserModalProps) {
+  const { token } = useApp();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    role: 'user',
+    password: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token) return;
+
     setIsLoading(true);
-    console.log("Adding user:", name);
-    // Simulate API call
-    setTimeout(() => {
-        setIsLoading(false);
-        onOpenChange(false);
-    }, 1500);
-  }
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api'}/users`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      
+      toast({
+        title: 'Success',
+        description: 'User created successfully!',
+      });
+      
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        role: 'user',
+        password: ''
+      });
+      
+      onOpenChange(false);
+      if (onUserAdded) {
+        onUserAdded();
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to create user. Please try again.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -46,19 +95,45 @@ export function AddUserModal({ children, isOpen, onOpenChange }: { children: Rea
               <Label htmlFor="name" className="text-right">
                 Full Name
               </Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3 cursor-text" />
+              <Input 
+                id="name" 
+                value={formData.name} 
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                className="col-span-3 cursor-text" 
+                required
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="email" className="text-right">
                 Email
               </Label>
-              <Input id="email" type="email" className="col-span-3 cursor-text" />
+              <Input 
+                id="email" 
+                type="email" 
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                className="col-span-3 cursor-text" 
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="password" className="text-right">
+                Password
+              </Label>
+              <Input 
+                id="password" 
+                type="password" 
+                value={formData.password}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                className="col-span-3 cursor-text" 
+                required
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="role" className="text-right">
                 Role
               </Label>
-              <Select>
+              <Select value={formData.role} onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}>
                 <SelectTrigger className="col-span-3 cursor-pointer">
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
@@ -70,7 +145,12 @@ export function AddUserModal({ children, isOpen, onOpenChange }: { children: Rea
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" className="cursor-pointer">Create User</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" className="cursor-pointer" disabled={isLoading}>
+              {isLoading ? 'Creating...' : 'Create User'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
