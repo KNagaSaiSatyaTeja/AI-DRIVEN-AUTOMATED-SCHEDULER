@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { TimetableConfig, FacultyConfig } from "@/data/schedule";
 import {
@@ -33,7 +34,7 @@ export function ManageFaculty({
   setConfig,
   isAdmin,
 }: ManageFacultyProps) {
-  const { selectedRoom, setIsLoading } = useApp();
+  const { selectedRoom, setIsLoading, token } = useApp();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFaculty, setEditingFaculty] = useState<FacultyConfig | null>(
@@ -42,30 +43,43 @@ export function ManageFaculty({
   const [faculty, setFaculty] = useState<FacultyConfig[]>([]);
 
   const fetchFaculty = useCallback(async () => {
-    if (!selectedRoom) return;
+    if (!selectedRoom || !token) return;
     setIsLoading(true);
     try {
       const response = await axios.get(
         `${import.meta.env.VITE_APP_API_BASE_URL}/faculty/room/${selectedRoom}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
-      setFaculty(response.data);
+      
+      // Transform backend data to frontend format
+      const transformedFaculty = response.data.map((f: any) => ({
+        id: f.facultyId || f._id,
+        name: f.name,
+        availability: f.availability || [],
+      }));
+      
+      setFaculty(transformedFaculty);
     } catch (error) {
       console.error("Error fetching faculty:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch faculty data.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [selectedRoom, setIsLoading]);
+  }, [selectedRoom, setIsLoading, token, toast]);
 
   useEffect(() => {
-    if (selectedRoom) {
+    if (selectedRoom && token) {
       fetchFaculty();
     }
-  }, [selectedRoom, fetchFaculty]);
+  }, [selectedRoom, fetchFaculty, token]);
 
   const handleAddFaculty = () => {
     if (!selectedRoom) {
@@ -92,29 +106,27 @@ export function ManageFaculty({
   };
 
   const handleDeleteFaculty = async (facultyId: string) => {
-    if (!selectedRoom) return;
+    if (!selectedRoom || !token) return;
     setIsLoading(true);
     try {
       await axios.delete(
-        `${
-          import.meta.env.VITE_APP_API_BASE_URL
-        }/faculty/room/${selectedRoom}/${facultyId}`,
+        `${import.meta.env.VITE_APP_API_BASE_URL}/faculty/room/${selectedRoom}/${facultyId}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
       fetchFaculty();
       toast({
         title: "Faculty Deleted",
-        description: `Faculty with ID ${facultyId} has been removed.`,
+        description: `Faculty has been removed successfully.`,
       });
     } catch (error) {
       toast({
         title: "Cannot Delete Faculty",
         description:
-          "This faculty member is assigned to one or more subjects. Please unassign them first.",
+          "This faculty member may be assigned to subjects. Please unassign them first.",
         variant: "destructive",
       });
     } finally {
@@ -122,56 +134,42 @@ export function ManageFaculty({
     }
   };
 
-  const handleSaveFaculty = async (faculty: FacultyConfig) => {
-    console.log("Saving faculty:", faculty);
+  const handleSaveFaculty = async (facultyData: any) => {
+    if (!selectedRoom || !token) return;
     
-    if (!selectedRoom) return;
-    setIsLoading(true);
     try {
+      const payload = {
+        facultyId: editingFaculty?.id || `f${Date.now()}`,
+        name: facultyData.name,
+        availability: facultyData.availability || [],
+      };
+
       if (editingFaculty) {
         await axios.put(
-          `${
-            import.meta.env.VITE_APP_API_BASE_URL
-          }/faculty/room/${selectedRoom}/${faculty.id}`,
-          {
-            ...faculty,
-            room: selectedRoom, // ✅ include room
-          },
+          `${import.meta.env.VITE_APP_API_BASE_URL}/faculty/room/${selectedRoom}/${editingFaculty.id}`,
+          payload,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         );
       } else {
-        const response = await axios.post(
-          `${
-            import.meta.env.VITE_APP_API_BASE_URL
-          }/faculty/room/${selectedRoom}`,
-          {
-            ...faculty,
-            room: selectedRoom, // ✅ include room
-            id: `f${Date.now()}`,
-          },
+        await axios.post(
+          `${import.meta.env.VITE_APP_API_BASE_URL}/faculty/room/${selectedRoom}`,
+          payload,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         );
-        faculty.id = response.data.faculty?.id || faculty.id;
       }
+      
       fetchFaculty();
-      setIsModalOpen(false);
     } catch (error) {
       console.error("Error saving faculty:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save faculty. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+      throw error; // Re-throw to let the modal handle the error display
     }
   };
 
@@ -269,7 +267,7 @@ export function ManageFaculty({
         faculty={editingFaculty}
         onSaveSuccess={fetchFaculty}
         onSaveFaculty={handleSaveFaculty}
-        selectedRoom={selectedRoom}
+        selectedRoom={selectedRoom || ""}
       />
     </>
   );

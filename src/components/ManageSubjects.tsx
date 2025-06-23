@@ -1,114 +1,4 @@
-// import { useState } from 'react';
-// import { TimetableConfig, SubjectConfig } from '@/data/schedule';
-// import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-// import { Button } from '@/components/ui/button';
-// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-// import { Plus, Edit, Trash2 } from 'lucide-react';
-// import { EditSubjectModal } from './EditSubjectModal';
 
-// interface ManageSubjectsProps {
-//   config: TimetableConfig;
-//   setConfig: (config: TimetableConfig) => void;
-//   isAdmin: boolean;
-// }
-
-// export function ManageSubjects({ config, setConfig, isAdmin }: ManageSubjectsProps) {
-//   const [isModalOpen, setIsModalOpen] = useState(false);
-//   const [editingSubject, setEditingSubject] = useState<SubjectConfig | null>(null);
-
-//   const handleAddSubject = () => {
-//     setEditingSubject(null);
-//     setIsModalOpen(true);
-//   };
-
-//   const handleEditSubject = (subject: SubjectConfig) => {
-//     setEditingSubject(subject);
-//     setIsModalOpen(true);
-//   };
-
-//   const handleDeleteSubject = (subjectId: string) => {
-//     setConfig({
-//       ...config,
-//       subjects: config.subjects.filter(s => s.id !== subjectId),
-//     });
-//   };
-
-//   const handleSaveSubject = (subject: SubjectConfig) => {
-//     const newSubjects = [...config.subjects];
-//     if (editingSubject) {
-//       // Update existing
-//       const index = newSubjects.findIndex(s => s.id === subject.id);
-//       if (index > -1) {
-//         newSubjects[index] = subject;
-//       }
-//     } else {
-//       // Add new
-//       newSubjects.push({ ...subject, id: `s${Date.now()}` });
-//     }
-//     setConfig({ ...config, subjects: newSubjects });
-//     setIsModalOpen(false);
-//   };
-
-//   return (
-//     <>
-//       <Card>
-//         <CardHeader className="flex flex-row items-center justify-between">
-//           <div>
-//             <CardTitle>Manage Subjects</CardTitle>
-//             <CardDescription>Add, edit, or remove subjects for the college.</CardDescription>
-//           </div>
-//           {isAdmin && <Button size="sm" onClick={handleAddSubject}><Plus className="mr-2" /> Add Subject</Button>}
-//         </CardHeader>
-//         <CardContent>
-//           <Table>
-//             <TableHeader>
-//               <TableRow>
-//                 <TableHead>Name</TableHead>
-//                 <TableHead>Duration (mins)</TableHead>
-//                 <TableHead>No. of Periods/Week</TableHead>
-//                 <TableHead>Assigned Faculty</TableHead>
-//                 {isAdmin && <TableHead className="text-right">Actions</TableHead>}
-//               </TableRow>
-//             </TableHeader>
-//             <TableBody>
-//               {config.subjects.length > 0 ? config.subjects.map(subject => (
-//                 <TableRow key={subject.id}>
-//                   <TableCell className="font-medium">{subject.name}</TableCell>
-//                   <TableCell>{subject.duration}</TableCell>
-//                   <TableCell>{subject.no_of_classes_per_week}</TableCell>
-//                   <TableCell>
-//                     {subject.facultyIds.map(fid => config.faculty.find(f => f.id === fid)?.name).filter(Boolean).join(', ') || 'None'}
-//                   </TableCell>
-//                   {isAdmin && (
-//                     <TableCell className="text-right">
-//                       <Button variant="ghost" size="icon" onClick={() => handleEditSubject(subject)}>
-//                         <Edit className="h-4 w-4" />
-//                       </Button>
-//                       <Button variant="ghost" size="icon" onClick={() => handleDeleteSubject(subject.id)}>
-//                         <Trash2 className="h-4 w-4 text-destructive" />
-//                       </Button>
-//                     </TableCell>
-//                   )}
-//                 </TableRow>
-//               )) : (
-//                 <TableRow>
-//                     <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground">No subjects added yet.</TableCell>
-//                 </TableRow>
-//               )}
-//             </TableBody>
-//           </Table>
-//         </CardContent>
-//       </Card>
-//       <EditSubjectModal
-//         isOpen={isModalOpen}
-//         onOpenChange={setIsModalOpen}
-//         subject={editingSubject}
-//         allFaculty={config.faculty}
-//         onSave={handleSaveSubject}
-//       />
-//     </>
-//   );
-// }
 import { useState, useEffect } from "react";
 import { TimetableConfig, SubjectConfig } from "@/data/schedule";
 import {
@@ -130,6 +20,7 @@ import {
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { EditSubjectModal } from "./EditSubjectModal";
 import { useApp } from "@/context/AppContext";
+import { useToast } from "@/components/ui/use-toast";
 import axios from "axios";
 
 interface ManageSubjectsProps {
@@ -143,7 +34,8 @@ export function ManageSubjects({
   setConfig,
   isAdmin,
 }: ManageSubjectsProps) {
-  const { selectedRoom, setIsLoading } = useApp();
+  const { selectedRoom, setIsLoading, token } = useApp();
+  const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<SubjectConfig | null>(
     null
@@ -151,77 +43,95 @@ export function ManageSubjects({
   const [subjects, setSubjects] = useState<SubjectConfig[]>([]);
 
   const fetchSubjects = async () => {
-    if (!selectedRoom) return;
+    if (!selectedRoom || !token) return;
     setIsLoading(true);
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_APP_API_BASE_URL}/subjects/room/${selectedRoom}`
+        `${import.meta.env.VITE_APP_API_BASE_URL}/subject/room/${selectedRoom}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      setSubjects(response.data);
+      
+      // Transform backend data to frontend format
+      const transformedSubjects = response.data.map((s: any) => ({
+        id: s._id,
+        name: s.name,
+        duration: s.time,
+        no_of_classes_per_week: s.noOfClassesPerWeek,
+        facultyIds: s.faculty?.map((f: any) => f.facultyId || f._id) || [],
+        isSpecial: s.isSpecial || false,
+      }));
+      
+      setSubjects(transformedSubjects);
     } catch (error) {
       console.error("Error fetching subjects:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch subjects data.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (selectedRoom) {
+    if (selectedRoom && token) {
       fetchSubjects();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRoom]);
+  }, [selectedRoom, token]);
 
   const handleAddSubject = () => {
+    if (!selectedRoom) {
+      toast({
+        title: "No room selected",
+        variant: "destructive",
+      });
+      return;
+    }
     setEditingSubject(null);
     setIsModalOpen(true);
   };
 
   const handleEditSubject = (subject: SubjectConfig) => {
+    if (!selectedRoom) {
+      toast({
+        title: "No room selected",
+        variant: "destructive",
+      });
+      return;
+    }
     setEditingSubject(subject);
     setIsModalOpen(true);
   };
 
   const handleDeleteSubject = async (subjectId: string) => {
-    if (!selectedRoom) return;
+    if (!selectedRoom || !token) return;
     setIsLoading(true);
     try {
       await axios.delete(
-        `${
-          import.meta.env.VITE_APP_API_BASE_URL
-        }/subjects/room/${selectedRoom}/${subjectId}`
+        `${import.meta.env.VITE_APP_API_BASE_URL}/subject/room/${selectedRoom}/${subjectId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       fetchSubjects();
+      toast({
+        title: "Subject Deleted",
+        description: "Subject has been removed successfully.",
+      });
     } catch (error) {
       console.error("Error deleting subject:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSaveSubject = async (subject: SubjectConfig) => {
-    if (!selectedRoom) return;
-    setIsLoading(true);
-    try {
-      if (editingSubject) {
-        await axios.put(
-          `${
-            import.meta.env.VITE_APP_API_BASE_URL
-          }/subjects/room/${selectedRoom}/${subject.id}`,
-          subject
-        );
-      } else {
-        await axios.post(
-          `${
-            import.meta.env.VITE_APP_API_BASE_URL
-          }/subjects/room/${selectedRoom}`,
-          { ...subject, id: `s${Date.now()}` }
-        );
-      }
-      fetchSubjects();
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error("Error saving subject:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete subject.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

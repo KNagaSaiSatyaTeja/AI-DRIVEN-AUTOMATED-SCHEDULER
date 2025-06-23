@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,7 +36,6 @@ import {
 import { Plus, Trash2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useApp } from "@/context/AppContext";
-
 import { useToast } from "@/components/ui/use-toast";
 
 const availabilitySchema = z
@@ -91,7 +91,7 @@ export function EditFacultyModal({
   onSaveFaculty,
   selectedRoom,
 }: EditFacultyModalProps) {
-  const { setIsLoading } = useApp(); // ✅ Fix
+  const { setIsLoading } = useApp();
   const { toast } = useToast();
   
   const form = useForm<FacultyFormValues>({
@@ -118,7 +118,6 @@ export function EditFacultyModal({
     } else {
       form.reset({ name: "", availability: [] });
     }
-    console.log("Form reset with:", { faculty, selectedRoom }); // Debug reset
   }, [faculty, isOpen, form, selectedRoom]);
 
   const onSubmit = async (data: FacultyFormValues) => {
@@ -128,10 +127,8 @@ export function EditFacultyModal({
     }
 
     setIsLoading(true);
-    console.log("Form submitted with data:", data); // Debug submission
 
     try {
-      // Send to parent to handle API and update list
       await onSaveFaculty({
         name: data.name,
         availability: data.availability || [],
@@ -142,8 +139,8 @@ export function EditFacultyModal({
         description: "Faculty saved successfully.",
       });
 
-      onSaveSuccess(); // refetch list
-      onOpenChange(false); // close modal
+      onSaveSuccess();
+      onOpenChange(false);
     } catch (error) {
       console.error("Error saving faculty:", error);
       toast({
@@ -155,12 +152,6 @@ export function EditFacultyModal({
       setIsLoading(false);
     }
   };
-
-  // Debug: Log when handleSubmit is called
-  const handleSubmitWrapper = form.handleSubmit((data) => {
-    console.log("handleSubmit called with data:", data);
-    onSubmit(data);
-  });
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -179,7 +170,7 @@ export function EditFacultyModal({
             <Form {...form}>
               <form
                 id="faculty-form"
-                onSubmit={handleSubmitWrapper} // Use wrapper for debugging
+                onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4 pb-4"
               >
                 <FormField
@@ -301,13 +292,6 @@ export function EditFacultyModal({
                     </Button>
                   </div>
                 </div>
-
-                {/* Debug: Display form errors */}
-                {Object.keys(form.formState.errors).length > 0 && (
-                  <div className="text-red-500 text-sm">
-                    {JSON.stringify(form.formState.errors, null, 2)}
-                  </div>
-                )}
               </form>
             </Form>
           </ScrollArea>
