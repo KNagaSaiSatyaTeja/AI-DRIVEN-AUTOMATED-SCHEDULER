@@ -80,7 +80,7 @@ export const roomsAPI = {
   },
   
   create: async (roomData: { name: string; capacity: number }) => {
-    const response = await api.post('/rooms', roomData);
+    const response = await api.post(`/rooms`, roomData);
     return response.data;
   },
   

@@ -30,7 +30,7 @@ const formSchema = z.object({
 });
 
 const LoginPage = () => {
-  const { setRole } = useApp();
+  const { setRole, setToken } = useApp();
   const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -47,8 +47,9 @@ const LoginPage = () => {
         `http://localhost:5000/api/auth/login`,
         values
       );
-      const { role } = response.data;
+      const { role, token } = response.data;
       setRole(role);
+      setToken(token);
       toast({
         title: "Login Successful",
         description: `Welcome back, ${role === "admin" ? "Admin" : "User"}!`,

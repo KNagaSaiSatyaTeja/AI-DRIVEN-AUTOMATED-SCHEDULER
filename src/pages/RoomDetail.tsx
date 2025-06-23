@@ -75,6 +75,7 @@ export default function RoomDetail() {
             },
           }
         );
+        console.log("Timetable data response:", response.data);
         const roomTimetable = response.data;
         setTimetables([roomTimetable]);
         setConfig({
@@ -100,7 +101,7 @@ export default function RoomDetail() {
     if (roomId) {
       fetchData();
     }
-  }, [roomId, toast, setIsLoading]);
+  }, [roomId, toast, setIsLoading, setSelectedRoom, config.collegeTime, config.breaks]);
 
   const handleCollegeTimeChange = (field: keyof CollegeTime, value: string) => {
     setConfig((prev) => ({
@@ -342,7 +343,7 @@ export default function RoomDetail() {
       <div className="flex justify-center">
         {isAdmin && (
           <Button size="lg" onClick={handleGenerateClick}>
-            Generate Timetable for {roomId}
+            Generate Timetable for the Room {config.name}
           </Button>
         )}
       </div>

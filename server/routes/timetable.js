@@ -10,7 +10,7 @@ router.post("/room/:roomId/generate", [auth, adminOnly], async (req, res) => {
   const { roomId } = req.params;
   const { subjects, break_, collegeTime } = req.body;
   try {
-    const room = await Room.findOne({ roomId });
+    const room = await Room.findById({ roomId });
     if (!room) return res.status(404).json({ message: "Room not found" });
 
     // Validate subjects and faculty
@@ -88,7 +88,7 @@ router.post("/room/:roomId/generate", [auth, adminOnly], async (req, res) => {
 router.get("/room/:roomId", auth, async (req, res) => {
   const { roomId } = req.params;
   try {
-    const room = await Room.findOne({ roomId });
+    const room = await Room.findById({ roomId });
     if (!room) return res.status(404).json({ message: "Room not found" });
     const timetables = await Timetable.find({ rooms: room._id }).populate(
       "subjects rooms"
@@ -126,7 +126,7 @@ router.put("/room/:roomId/:id", [auth, adminOnly], async (req, res) => {
   const { roomId, id } = req.params;
   const { subjects, breaks, collegeTime, schedule } = req.body;
   try {
-    const room = await Room.findOne({ roomId });
+    const room = await Room.findById({ roomId });
     if (!room) return res.status(404).json({ message: "Room not found" });
     const timetable = await Timetable.findById(id);
     if (!timetable)

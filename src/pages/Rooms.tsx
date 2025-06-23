@@ -282,7 +282,7 @@ export default function Rooms() {
                 id="room-name"
                 value={formValue}
                 onChange={(e) => setFormValue(e.target.value)}
-                placeholder="e.g. Room 101"
+                placeholder="e.g. 0000"
               />
             </div>
             <DialogFooter>

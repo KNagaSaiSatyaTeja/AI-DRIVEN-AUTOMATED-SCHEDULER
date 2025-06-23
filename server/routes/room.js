@@ -6,11 +6,23 @@ const { auth, adminOnly } = require("../middleware/auth");
 router.post("/", [auth, adminOnly], async (req, res) => {
   const { name, capacity } = req.body;
   try {
+    console.log("Received request body:", req.body); // Debug request body
+    if (!name || !capacity) {
+      return res
+        .status(400)
+        .json({ message: "Name and capacity are required" });
+    }
+    if (typeof capacity !== "number" || capacity <= 0) {
+      return res
+        .status(400)
+        .json({ message: "Capacity must be a positive number" });
+    }
     const existingRoom = await Room.findOne({ name });
-    if (existingRoom)
+    if (existingRoom) {
       return res
         .status(400)
         .json({ message: "Room with this name already exists" });
+    }
     const room = new Room({ name, capacity });
     await room.save();
     res.status(201).json({
@@ -18,6 +30,7 @@ router.post("/", [auth, adminOnly], async (req, res) => {
       room: { _id: room._id, name, capacity },
     });
   } catch (error) {
+    console.error("Error creating room:", error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -51,6 +64,16 @@ router.put("/:_id", [auth, adminOnly], async (req, res) => {
   const { _id } = req.params;
   const { name, capacity } = req.body;
   try {
+    if (!name || capacity === undefined) {
+      return res
+        .status(400)
+        .json({ message: "Name and capacity are required" });
+    }
+    if (typeof capacity !== "number" || capacity <= 0) {
+      return res
+        .status(400)
+        .json({ message: "Capacity must be a positive number" });
+    }
     const room = await Room.findByIdAndUpdate(
       _id,
       { name, capacity, updatedAt: Date.now() },
