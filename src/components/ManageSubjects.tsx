@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { TimetableConfig, SubjectConfig, FacultyConfig } from "@/data/schedule";
 import {
@@ -56,7 +57,7 @@ export function ManageSubjects({
       );
 
       const transformedSubjects = response.data.map((s: any) => ({
-        id: s._id,
+        _id: s._id,
         name: s.name,
         duration: s.time,
         no_of_classes_per_week: s.noOfClassesPerWeek,
@@ -91,7 +92,7 @@ export function ManageSubjects({
       );
 
       const transformedFaculty = response.data.map((f: any) => ({
-        id: f.facultyId || f._id,
+        _id: f.facultyId || f._id,
         name: f.name,
         availability: f.availability || [],
       }));
@@ -208,7 +209,7 @@ export function ManageSubjects({
             <TableBody>
               {subjects.length > 0 ? (
                 subjects.map((subject) => (
-                  <TableRow key={subject.id}>
+                  <TableRow key={subject._id}>
                     <TableCell className="font-medium">
                       {subject.name}
                     </TableCell>
@@ -216,7 +217,7 @@ export function ManageSubjects({
                     <TableCell>{subject.no_of_classes_per_week}</TableCell>
                     <TableCell>
                       {subject.facultyIds
-                        .map((fid) => faculty.find((f) => f.id === fid)?.name)
+                        .map((fid) => faculty.find((f) => f._id === fid)?.name)
                         .filter(Boolean)
                         .join(", ") || "None"}
                     </TableCell>
@@ -232,7 +233,7 @@ export function ManageSubjects({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDeleteSubject(subject.id)}
+                          onClick={() => handleDeleteSubject(subject._id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

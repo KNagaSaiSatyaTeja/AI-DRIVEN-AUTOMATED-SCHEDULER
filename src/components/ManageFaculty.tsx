@@ -57,7 +57,7 @@ export function ManageFaculty({
       
       // Transform backend data to frontend format
       const transformedFaculty = response.data.map((f: any) => ({
-        id: f.facultyId || f._id,
+        _id: f.facultyId || f._id,
         name: f.name,
         availability: f.availability || [],
       }));
@@ -139,14 +139,14 @@ export function ManageFaculty({
     
     try {
       const payload = {
-        facultyId: editingFaculty?.id || `f${Date.now()}`,
+        facultyId: editingFaculty?._id || `f${Date.now()}`,
         name: facultyData.name,
         availability: facultyData.availability || [],
       };
 
       if (editingFaculty) {
         await axios.put(
-          `${import.meta.env.VITE_APP_API_BASE_URL}/faculty/room/${selectedRoom}/${editingFaculty.id}`,
+          `${import.meta.env.VITE_APP_API_BASE_URL}/faculty/room/${selectedRoom}/${editingFaculty._id}`,
           payload,
           {
             headers: {
@@ -203,7 +203,7 @@ export function ManageFaculty({
             <TableBody>
               {faculty.length > 0 ? (
                 faculty.map((faculty) => (
-                  <TableRow key={faculty.id}>
+                  <TableRow key={faculty._id}>
                     <TableCell className="font-medium">
                       {faculty.name}
                     </TableCell>
@@ -239,7 +239,7 @@ export function ManageFaculty({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDeleteFaculty(faculty.id)}
+                          onClick={() => handleDeleteFaculty(faculty._id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

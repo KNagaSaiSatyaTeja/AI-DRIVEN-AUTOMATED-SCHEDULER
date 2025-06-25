@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -209,10 +210,6 @@ export default function RoomDetail() {
           <Button asChild variant="outline" size="sm" className="mb-4">
             <Link to="/rooms">Back to All Rooms</Link>
           </Button>
-          <h1 className="text-2xl font-bold">Room: {config.name} </h1>
-          <p className="text-muted-foreground">
-            Manage configuration and schedule for this room.
-          </p>
         </div>
       </div>
 
