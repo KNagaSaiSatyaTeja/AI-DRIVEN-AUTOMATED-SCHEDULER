@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -210,7 +209,7 @@ export default function RoomDetail() {
           <Button asChild variant="outline" size="sm" className="mb-4">
             <Link to="/rooms">Back to All Rooms</Link>
           </Button>
-          <h1 className="text-2xl font-bold">Room:{config.name} </h1>
+          <h1 className="text-2xl font-bold">Room: {config.name} </h1>
           <p className="text-muted-foreground">
             Manage configuration and schedule for this room.
           </p>
@@ -353,17 +352,7 @@ export default function RoomDetail() {
         </TabsContent>
 
         <TabsContent value="timetable" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Weekly Schedule</CardTitle>
-              <CardDescription>
-                This is the current, active timetable. Generate a new one based on your configuration.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Timetable />
-            </CardContent>
-          </Card>
+          <Timetable />
         </TabsContent>
       </Tabs>
 
