@@ -1,3 +1,4 @@
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -22,7 +23,9 @@ import {
 } from "@/components/ui/form";
 import { toast } from "@/components/ui/use-toast";
 import { Bot } from "lucide-react";
-import axios from "axios";
+import { authAPI } from "@/services/api";
+import { RegisterForm } from "@/components/RegisterForm";
+import { useState } from "react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -32,6 +35,7 @@ const formSchema = z.object({
 const LoginPage = () => {
   const { setRole, setToken } = useApp();
   const navigate = useNavigate();
+  const [isRegistering, setIsRegistering] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,11 +47,8 @@ const LoginPage = () => {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const response = await axios.post(
-        `http://localhost:5000/api/auth/login`,
-        values
-      );
-      const { role, token } = response.data;
+      const response = await authAPI.login(values.email, values.password);
+      const { role, token } = response;
       setRole(role);
       setToken(token);
       toast({
@@ -55,14 +56,22 @@ const LoginPage = () => {
         description: `Welcome back, ${role === "admin" ? "Admin" : "User"}!`,
       });
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Invalid Credentials",
-        description: "Please check your email and password.",
+        description: error.response?.data?.message || "Please check your email and password.",
       });
     }
   }
+
+  const handleRegisterSuccess = () => {
+    setIsRegistering(false);
+    toast({
+      title: "Registration Complete",
+      description: "You can now login with your credentials.",
+    });
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
@@ -75,47 +84,75 @@ const LoginPage = () => {
             AI-Driven Automated Scheduler
           </CardTitle>
           <CardDescription>
-            Enter your credentials to access your dashboard.
+            {isRegistering 
+              ? "Create a new account to get started." 
+              : "Enter your credentials to access your dashboard."}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="admin@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full">
-                Login
-              </Button>
-            </form>
-          </Form>
+          {isRegistering ? (
+            <>
+              <RegisterForm onSuccess={handleRegisterSuccess} />
+              <div className="mt-4 text-center">
+                <Button 
+                  variant="link" 
+                  onClick={() => setIsRegistering(false)}
+                  className="text-sm"
+                >
+                  Already have an account? Login here
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="admin@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="password"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full">
+                    Login
+                  </Button>
+                </form>
+              </Form>
+              <div className="mt-4 text-center">
+                <Button 
+                  variant="link" 
+                  onClick={() => setIsRegistering(true)}
+                  className="text-sm"
+                >
+                  Don't have an account? Register here
+                </Button>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

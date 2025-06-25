@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -33,6 +34,7 @@ import { ManageSubjects } from "@/components/ManageSubjects";
 import { ManageFaculty } from "@/components/ManageFaculty";
 import { useToast } from "@/components/ui/use-toast";
 import { GenerateTimetableModal } from "@/components/GenerateTimetableModal";
+import { Timetable } from "@/components/Timetable";
 import axios from "axios";
 
 export default function RoomDetail() {
@@ -216,11 +218,12 @@ export default function RoomDetail() {
       </div>
 
       <Tabs defaultValue="subjects" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="subjects">Subjects</TabsTrigger>
           <TabsTrigger value="faculty">Faculty</TabsTrigger>
           <TabsTrigger value="breaks">Breaks</TabsTrigger>
           <TabsTrigger value="timings">Timings</TabsTrigger>
+          <TabsTrigger value="timetable">Timetable</TabsTrigger>
         </TabsList>
 
         <TabsContent value="subjects" className="mt-4">
@@ -348,6 +351,20 @@ export default function RoomDetail() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="timetable" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Weekly Schedule</CardTitle>
+              <CardDescription>
+                This is the current, active timetable. Generate a new one based on your configuration.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Timetable />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <div className="flex justify-center">
@@ -363,7 +380,7 @@ export default function RoomDetail() {
         onOpenChange={setIsGenerateModalOpen}
         config={config}
         onGenerateSuccess={handleGenerateSuccess}
-        isLoading={false} // Controlled by setIsLoading
+        isLoading={false}
       />
     </div>
   );
