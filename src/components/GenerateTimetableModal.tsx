@@ -38,9 +38,9 @@ export function GenerateTimetableModal({
         time: s.duration,
         no_of_classes_per_week: s.no_of_classes_per_week,
         faculty: s.facultyIds.map((facultyId) => {
-          const faculty = config.faculty.find((f) => f.id === facultyId);
+          const faculty = config.faculty.find((f) => f._id === facultyId);
           return {
-            id: faculty?.id || facultyId,
+            id: faculty?._id || facultyId,
             name: faculty?.name || "Unknown Faculty",
             availability: faculty?.availability || [],
           };

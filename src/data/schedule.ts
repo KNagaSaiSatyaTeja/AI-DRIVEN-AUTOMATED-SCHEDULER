@@ -52,13 +52,13 @@ endTime: string;
 }
 
 export interface FacultyConfig {
-id: string; // Changed from _id to id for consistency
+_id: string;
 name: string;
 availability: FacultyAvailability[];
 }
 
 export interface SubjectConfig {
-id: string; // Changed from _id to id for consistency
+_id: string;
 name: string;
 duration: number; // in minutes
 no_of_classes_per_week: number;
