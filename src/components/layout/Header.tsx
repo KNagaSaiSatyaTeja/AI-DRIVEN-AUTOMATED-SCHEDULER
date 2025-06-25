@@ -14,7 +14,7 @@ import { useTheme } from '@/components/theme-provider';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export function Header() {
-  const { role, logout, selectedRoom } = useApp();
+  const { role, logout } = useApp();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,17 +24,16 @@ export function Header() {
     navigate('/login');
   };
 
-  // Get the room name from the URL if we're on a room detail page
+  // Check if we're on a room detail page
   const isRoomDetailPage = location.pathname.includes('/rooms/') && location.pathname !== '/rooms';
-  const roomName = isRoomDetailPage ? selectedRoom : null;
 
   return (
     <header className="flex-shrink-0 bg-card border-b border-border">
       <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
         <div className="flex items-center">
-          {roomName && (
+          {isRoomDetailPage && (
             <div>
-              <h1 className="text-xl font-bold">Room: {roomName}</h1>
+              <h1 className="text-xl font-bold">AI-Driven Automated Scheduling System</h1>
               <p className="text-sm text-muted-foreground">
                 Manage configuration and schedule for this room
               </p>
