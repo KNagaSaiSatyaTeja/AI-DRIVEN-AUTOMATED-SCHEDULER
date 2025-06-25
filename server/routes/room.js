@@ -4,30 +4,26 @@ const { Room, Subject, Faculty } = require("../models");
 const { auth, adminOnly } = require("../middleware/auth");
 
 router.post("/", [auth, adminOnly], async (req, res) => {
-  const { name, capacity } = req.body;
+  const { name } = req.body;
   try {
     console.log("Received request body:", req.body); // Debug request body
-    if (!name || !capacity) {
+    if (!name) {
       return res
         .status(400)
         .json({ message: "Name and capacity are required" });
     }
-    if (typeof capacity !== "number" || capacity <= 0) {
-      return res
-        .status(400)
-        .json({ message: "Capacity must be a positive number" });
-    }
+    
     const existingRoom = await Room.findOne({ name });
     if (existingRoom) {
       return res
         .status(400)
         .json({ message: "Room with this name already exists" });
     }
-    const room = new Room({ name, capacity });
+    const room = new Room({ name });
     await room.save();
     res.status(201).json({
       message: "Room created",
-      room: { _id: room._id, name, capacity },
+      room: { _id: room._id, name },
     });
   } catch (error) {
     console.error("Error creating room:", error);

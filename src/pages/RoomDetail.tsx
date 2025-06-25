@@ -37,7 +37,7 @@ import axios from "axios";
 
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
-  const { role, setIsLoading,setSelectedRoom } = useApp();
+  const { role, setIsLoading, setSelectedRoom, selectedRoom } = useApp();
   const { toast } = useToast();
   const isAdmin = role === "admin";
 
@@ -65,7 +65,7 @@ export default function RoomDetail() {
       setIsLoading(true);
       try {
         setSelectedRoom(roomId || "");
-        
+
         console.log("Fetching timetable data for room:", roomId);
         const response = await axios.get(
           `${import.meta.env.VITE_APP_API_BASE_URL}/rooms/${roomId}`,
@@ -101,7 +101,14 @@ export default function RoomDetail() {
     if (roomId) {
       fetchData();
     }
-  }, [roomId, toast, setIsLoading, setSelectedRoom, config.collegeTime, config.breaks]);
+  }, [
+    roomId,
+    toast,
+    setIsLoading,
+    setSelectedRoom,
+    config.collegeTime,
+    config.breaks,
+  ]);
 
   const handleCollegeTimeChange = (field: keyof CollegeTime, value: string) => {
     setConfig((prev) => ({
@@ -137,11 +144,13 @@ export default function RoomDetail() {
   const handleGenerateSuccess = async (payload: any) => {
     setIsLoading(true);
     try {
+      console.log("Generating timetable with payload from room :", payload);
       const response = await axios.post(
         `${
           import.meta.env.VITE_APP_API_BASE_URL
         }/timetable/room/${roomId}/generate`,
-        payload,{
+        payload,
+        {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -156,7 +165,8 @@ export default function RoomDetail() {
       if (result.success) {
         setIsGenerateModalOpen(false);
         const data = await axios.get(
-          `${import.meta.env.VITE_APP_API_BASE_URL}/timetable/room/${roomId}`,{
+          `${import.meta.env.VITE_APP_API_BASE_URL}/timetable/room/${roomId}`,
+          {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },

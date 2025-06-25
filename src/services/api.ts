@@ -75,6 +75,7 @@ export const usersAPI = {
 // Rooms API
 export const roomsAPI = {
   getAll: async () => {
+    console.log('Fetching all rooms');
     const response = await api.get('/rooms');
     return response.data;
   },

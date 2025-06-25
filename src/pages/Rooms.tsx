@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,22 +37,25 @@ export default function Rooms() {
   const [isEditDialogOpen, setEditDialogOpen] = useState(false);
   const [isAlertDialogOpen, setAlertDialogOpen] = useState(false);
 
-  const [currentRoom, setCurrentRoom] = useState<{ _id: string; name: string } | null>(null);
+  const [currentRoom, setCurrentRoom] = useState<{
+    _id: string;
+    name: string;
+  } | null>(null);
   const [formValue, setFormValue] = useState("");
 
   useEffect(() => {
     const fetchRooms = async () => {
       setIsLoading(true);
       try {
-        console.log("Fetching rooms from API...");
+        console.log("Fetching rooms from API..aaaaa.");
         const data = await roomsAPI.getAll();
-        
+
         // Map response data to extract _id and name
         const roomData = data.map((room: any) => ({
           _id: room._id,
           name: room.name,
         }));
-        
+
         setRooms(roomData.sort((a, b) => a.name.localeCompare(b.name)));
         console.log("Rooms fetched successfully:", roomData);
       } catch (error) {
@@ -81,14 +83,14 @@ export default function Rooms() {
           name: formValue,
           capacity: 30, // Default capacity
         });
-        
+
         const newRoom = response.room;
         setRooms((prev) =>
           [...prev, { _id: newRoom._id, name: newRoom.name }].sort((a, b) =>
             a.name.localeCompare(b.name)
           )
         );
-        
+
         toast({
           title: "Room added",
           description: `Room "${newRoom.name}" has been added.`,
@@ -124,8 +126,10 @@ export default function Rooms() {
     ) {
       setIsLoading(true);
       try {
-        const response = await roomsAPI.update(currentRoom._id, { name: formValue });
-        
+        const response = await roomsAPI.update(currentRoom._id, {
+          name: formValue,
+        });
+
         const updatedRoom = response.room;
         setRooms((prev) =>
           prev
@@ -136,9 +140,9 @@ export default function Rooms() {
             )
             .sort((a, b) => a.name.localeCompare(b.name))
         );
-        
+
         setCurrentRoom({ _id: updatedRoom._id, name: updatedRoom.name });
-        
+
         toast({
           title: "Room updated",
           description: `Room "${currentRoom.name}" has been updated to "${updatedRoom.name}".`,
@@ -166,14 +170,14 @@ export default function Rooms() {
 
   const handleDelete = async () => {
     if (!currentRoom) return;
-    
+
     setIsLoading(true);
     try {
       await roomsAPI.delete(currentRoom._id);
-      
+
       setRooms((prev) => prev.filter((r) => r._id !== currentRoom._id));
       setCurrentRoom(null);
-      
+
       toast({
         title: "Room deleted",
         description: `Room "${currentRoom.name}" has been removed.`,
