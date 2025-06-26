@@ -10,8 +10,6 @@ router.post("/room/:roomId/generate", [auth, adminOnly], async (req, res) => {
   const { roomId } = req.params;
   let { subjects, break_, college_time } = req.body;
 
-  // Debug log
-
   try {
     // Parse stringified faculty arrays if needed
     subjects = subjects.map((subject) => {
@@ -116,14 +114,13 @@ router.post("/room/:roomId/generate", [auth, adminOnly], async (req, res) => {
     }
 
     // Prepare payload for FastAPI
-
     const fastapiPayload = {
       subjects: subjects.map((s) => ({
         name: s.name,
         time: s.time,
         no_of_classes_per_week: s.no_of_classes_per_week,
         faculty: s.faculty.map((f) => ({
-          id: f.id || f._id, // support both id formats
+          id: f.id || f._id,
           name: f.name,
           availability: f.availability || [],
         })),
@@ -147,61 +144,69 @@ router.post("/room/:roomId/generate", [auth, adminOnly], async (req, res) => {
       throw new Error("Empty response from FastAPI service");
     }
     console.log("FastAPI response:", fastapiData);
-    // Handle FastAPI response format
-    let roomWiseSchedules = [];
 
-    if (fastapiData.schedule) {
-      roomWiseSchedules.push({ room: roomId, schedule: fastapiData.schedule });
-    } else if (fastapiData.roomWiseSchedules) {
-      roomWiseSchedules = fastapiData.roomWiseSchedules.map((item) => ({
-        room: item.roomId || item.room || roomId,
-        schedule: item.schedule,
-      }));
-    } else if (fastapiData.weekly_schedule) {
-      roomWiseSchedules.push({
-        room: roomId,
-        schedule: fastapiData.weekly_schedule,
-      });
+    // Extract weekly schedule data from FastAPI response
+    let weeklyScheduleData = null;
+    let timeSlots = [];
+
+    if (fastapiData.weekly_schedule) {
+      weeklyScheduleData = fastapiData.weekly_schedule;
+      timeSlots = fastapiData.weekly_schedule.time_slots || [];
+    } else if (fastapiData.schedule) {
+      // Handle legacy format if needed
+      weeklyScheduleData = {
+        time_slots: fastapiData.time_slots || [],
+        days: fastapiData.schedule,
+      };
+      timeSlots = fastapiData.time_slots || [];
     } else {
-      throw new Error("Invalid response format from FastAPI");
+      throw new Error(
+        "Invalid response format from FastAPI - missing schedule data"
+      );
     }
 
-    // Validation helper
-    
-    const timetable = new Timetable({
-      subjects: subjects.map((s) => s.name),
-      breaks: break_,
-      college_time,
-      rooms: [room._id],
-      roomWiseSchedules,
-      schedule: fastapiData.weekly_schedule || fastapiData.schedule || null,
-      
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    // Check if timetable already exists for this room
+    let existingTimetable = await Timetable.findOne({});
 
-    const savedTimetable = await timetable.save();
-    
+    // For room-specific filtering, we'll use the schema methods
+    let savedTimetable;
+    let isUpdate = false;
+
+    if (existingTimetable) {
+      // Update existing timetable
+      isUpdate = true;
+      existingTimetable.time_slots = timeSlots;
+      existingTimetable.days = weeklyScheduleData.days;
+      existingTimetable.updatedAt = new Date();
+      savedTimetable = await existingTimetable.save();
+    } else {
+      // Create new timetable using the schema static method
+      savedTimetable = Timetable.createFromFastAPIResponse(fastapiData);
+      await savedTimetable.save();
+    }
+
+    // Get room-specific schedule using schema method
+    const roomSchedule = savedTimetable.getScheduleForRoom(roomId);
+
     const responseData = {
       success: true,
-      message: "Schedule generated and saved successfully",
-      scheduler: savedTimetable,
-    };
-    if (fastapiData.metadata) {
-      responseData.fastapiMetadata = fastapiData.metadata;
-    }
-
-    if (fastapiData.fitness !== undefined) {
-      responseData.scheduleQuality = {
+      message: isUpdate
+        ? "Schedule updated successfully"
+        : "Schedule generated and saved successfully",
+      timetable: savedTimetable,
+      roomSchedule: roomSchedule,
+      isUpdate: isUpdate,
+      fastapiResponse: fastapiData,
+      scheduleQuality: {
         fitness: fastapiData.fitness,
         utilizationPercentage: fastapiData.utilization_percentage,
         totalAssignments: fastapiData.total_assignments,
         unassigned: fastapiData.unassigned || [],
         subjectCoverage: fastapiData.subject_coverage,
-      };
-    }
+      },
+    };
 
-    res.status(201).json(responseData);
+    res.status(isUpdate ? 200 : 201).json(responseData);
   } catch (error) {
     console.error("Error in schedule generation:", error);
 
@@ -245,117 +250,257 @@ router.post("/room/:roomId/generate", [auth, adminOnly], async (req, res) => {
   }
 });
 
-// Optional: Add a route to get schedule validation details
-router.get("/timetable/:timetableId/validation", [auth], async (req, res) => {
-  try {
-    const { timetableId } = req.params;
-
-    const timetable = await Timetable.findById(timetableId);
-    if (!timetable) {
-      return res.status(404).json({ message: "Timetable not found" });
-    }
-
-    res.json({
-      timetableId: timetable._id,
-      validationResults: timetable.validationResults,
-      metadata: {
-        createdAt: timetable.createdAt,
-        subjects: timetable.subjects,
-        rooms: timetable.rooms,
-      },
-    });
-  } catch (error) {
-    console.error("Error fetching validation details:", error);
-    res.status(500).json({
-      message: "Error fetching validation details",
-      error: error.message,
-    });
-  }
-});
-
+// Get timetable for a specific room
 router.get("/room/:roomId", auth, async (req, res) => {
   const { roomId } = req.params;
   try {
-    const room = await Room.findById({ roomId });
+    const room = await Room.findById(roomId);
     if (!room) return res.status(404).json({ message: "Room not found" });
-    const timetables = await Timetable.find({ rooms: room._id }).populate(
-      "subjects rooms"
-    );
-    const roomSchedules = timetables.map((timetable) => ({
+
+    const timetable = await Timetable.findOne({});
+    if (!timetable) {
+      return res.status(404).json({ message: "No timetable found" });
+    }
+
+    // Use schema method to get room-specific schedule
+    const roomSchedule = timetable.getScheduleForRoom(roomId);
+
+    res.json({
       id: timetable._id,
-      roomSchedule: timetable.roomWiseSchedules.find(
-        (rs) => rs.room === roomId
-      ) || { room: roomId, schedule: [] },
-      subjects: timetable.subjects,
-      breaks: timetable.breaks,
-      college_time: timetable.college_time,
+      roomId: roomId,
+      schedule: roomSchedule,
+      timeSlots: timetable.time_slots,
       createdAt: timetable.createdAt,
       updatedAt: timetable.updatedAt,
-    }));
-    res.json(roomSchedules);
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
+// Get timetable for a specific day
+router.get("/day/:day", auth, async (req, res) => {
+  const { day } = req.params;
+  try {
+    const timetable = await Timetable.findOne({});
+    if (!timetable) {
+      return res.status(404).json({ message: "No timetable found" });
+    }
+
+    // Use schema method to get day-specific schedule
+    const daySchedule = timetable.getScheduleForDay(day);
+
+    res.json({
+      id: timetable._id,
+      day: day.toUpperCase(),
+      schedule: daySchedule,
+      timeSlots: timetable.time_slots,
+      createdAt: timetable.createdAt,
+      updatedAt: timetable.updatedAt,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get timetable for a specific faculty
+router.get("/faculty/:facultyId", auth, async (req, res) => {
+  const { facultyId } = req.params;
+  try {
+    const timetable = await Timetable.findOne({});
+    if (!timetable) {
+      return res.status(404).json({ message: "No timetable found" });
+    }
+
+    // Use schema method to get faculty-specific schedule
+    const facultySchedule = timetable.getScheduleForFaculty(facultyId);
+
+    res.json({
+      id: timetable._id,
+      facultyId: facultyId,
+      schedule: facultySchedule,
+      timeSlots: timetable.time_slots,
+      createdAt: timetable.createdAt,
+      updatedAt: timetable.updatedAt,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get specific timetable by ID
 router.get("/:id", auth, async (req, res) => {
   const { id } = req.params;
   try {
-    const timetable = await Timetable.findById(id).populate("subjects rooms");
+    const timetable = await Timetable.findById(id);
     if (!timetable)
       return res.status(404).json({ message: "Timetable not found" });
+
     res.json(timetable);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
+// Update timetable for a specific room
 router.put("/room/:roomId/:id", [auth, adminOnly], async (req, res) => {
   const { roomId, id } = req.params;
-  const { subjects, breaks, college_time, schedule } = req.body;
+  const { schedule, timeSlots } = req.body;
+
   try {
-    const room = await Room.findById({ roomId });
+    const room = await Room.findById(roomId);
     if (!room) return res.status(404).json({ message: "Room not found" });
+
     const timetable = await Timetable.findById(id);
     if (!timetable)
       return res.status(404).json({ message: "Timetable not found" });
-    if (!timetable.rooms.some((r) => r.equals(room._id)))
-      return res
-        .status(400)
-        .json({ message: "Timetable not associated with this room" });
 
-    const subjectDocs = await Subject.find({
-      _id: { $in: subjects.map((s) => s._id) },
-    }).populate("faculty room");
-    const subjectMap = new Map(subjectDocs.map((s) => [s._id.toString(), s]));
-    for (const subject of subjects) {
-      const subjectDoc = subjectMap.get(subject._id);
-      if (!subjectDoc)
-        return res
-          .status(400)
-          .json({ message: `Subject ${subject.name} not found` });
-      if (!room._id.equals(subjectDoc.room)) {
-        return res.status(400).json({
-          message: `Subject ${subject.name} not assigned to room ${roomId}`,
-        });
+    // Validate that the room exists in the schedule
+    const roomSchedule = timetable.getScheduleForRoom(roomId);
+    if (roomSchedule.length === 0) {
+      return res.status(400).json({
+        message: "No schedule found for this room in the timetable",
+      });
+    }
+
+    // Update time slots if provided
+    if (timeSlots) {
+      timetable.time_slots = timeSlots;
+    }
+
+    // Update schedule if provided
+    if (schedule) {
+      // Validate schedule entries
+      const dayNames = [
+        "MONDAY",
+        "TUESDAY",
+        "WEDNESDAY",
+        "THURSDAY",
+        "FRIDAY",
+        "SATURDAY",
+      ];
+
+      for (const day of dayNames) {
+        if (schedule[day]) {
+          // Filter out entries for this room and add new ones
+          timetable.days[day] = timetable.days[day].filter(
+            (entry) => entry.room_id !== roomId
+          );
+
+          // Add new schedule entries for this room
+          const newEntries = schedule[day].filter(
+            (entry) => entry.room_id === roomId
+          );
+          timetable.days[day].push(...newEntries);
+        }
       }
     }
 
-    const roomWiseSchedules = [{ room: roomId, schedule }];
-    const updatedTimetable = await Timetable.findByIdAndUpdate(
-      id,
-      {
-        subjects: subjectDocs.map((s) => s._id),
-        breaks,
-        college_time,
-        rooms: [room._id],
-        schedule,
-        roomWiseSchedules,
-        updatedAt: Date.now(),
-      },
-      { new: true }
-    ).populate("subjects rooms");
-    res.json(updatedTimetable);
+    timetable.updatedAt = new Date();
+    const updatedTimetable = await timetable.save();
+
+    res.json({
+      timetable: updatedTimetable,
+      roomSchedule: updatedTimetable.getScheduleForRoom(roomId),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get all timetables
+router.get("/", auth, async (req, res) => {
+  try {
+    const timetables = await Timetable.find();
+    res.json(timetables);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Delete timetable
+router.delete("/:id", [auth, adminOnly], async (req, res) => {
+  const { id } = req.params;
+  try {
+    const timetable = await Timetable.findByIdAndDelete(id);
+    if (!timetable)
+      return res.status(404).json({ message: "Timetable not found" });
+
+    res.json({ message: "Timetable deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get complete weekly schedule
+router.get("/weekly/schedule", auth, async (req, res) => {
+  try {
+    const timetable = await Timetable.findOne({});
+    if (!timetable) {
+      return res.status(404).json({ message: "No timetable found" });
+    }
+
+    res.json({
+      id: timetable._id,
+      timeSlots: timetable.time_slots,
+      days: timetable.days,
+      createdAt: timetable.createdAt,
+      updatedAt: timetable.updatedAt,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get schedule statistics
+router.get("/stats/overview", auth, async (req, res) => {
+  try {
+    const timetable = await Timetable.findOne({});
+    if (!timetable) {
+      return res.status(404).json({ message: "No timetable found" });
+    }
+
+    const stats = {
+      totalTimeSlots: timetable.time_slots.length,
+      totalScheduleEntries: 0,
+      roomsInUse: new Set(),
+      facultyInUse: new Set(),
+      subjectsScheduled: new Set(),
+      dayWiseStats: {},
+    };
+
+    const dayNames = [
+      "MONDAY",
+      "TUESDAY",
+      "WEDNESDAY",
+      "THURSDAY",
+      "FRIDAY",
+      "SATURDAY",
+    ];
+
+    dayNames.forEach((day) => {
+      const daySchedule = timetable.days[day] || [];
+      stats.totalScheduleEntries += daySchedule.length;
+      stats.dayWiseStats[day] = daySchedule.length;
+
+      daySchedule.forEach((entry) => {
+        stats.roomsInUse.add(entry.room_id);
+        stats.facultyInUse.add(entry.faculty_id);
+        stats.subjectsScheduled.add(entry.subject_name);
+      });
+    });
+
+    // Convert Sets to arrays for JSON response
+    stats.roomsInUse = Array.from(stats.roomsInUse);
+    stats.facultyInUse = Array.from(stats.facultyInUse);
+    stats.subjectsScheduled = Array.from(stats.subjectsScheduled);
+
+    res.json({
+      timetableId: timetable._id,
+      statistics: stats,
+      createdAt: timetable.createdAt,
+      updatedAt: timetable.updatedAt,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
