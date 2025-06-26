@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -33,11 +34,12 @@ import { ManageSubjects } from "@/components/ManageSubjects";
 import { ManageFaculty } from "@/components/ManageFaculty";
 import { useToast } from "@/components/ui/use-toast";
 import { GenerateTimetableModal } from "@/components/GenerateTimetableModal";
+import { Timetable } from "@/components/Timetable";
 import axios from "axios";
 
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
-  const { role, setIsLoading,setSelectedRoom } = useApp();
+  const { role, setIsLoading, setSelectedRoom, selectedRoom } = useApp();
   const { toast } = useToast();
   const isAdmin = role === "admin";
 
@@ -65,7 +67,7 @@ export default function RoomDetail() {
       setIsLoading(true);
       try {
         setSelectedRoom(roomId || "");
-        
+
         console.log("Fetching timetable data for room:", roomId);
         const response = await axios.get(
           `${import.meta.env.VITE_APP_API_BASE_URL}/rooms/${roomId}`,
@@ -75,6 +77,7 @@ export default function RoomDetail() {
             },
           }
         );
+        console.log("Timetable data response:", response.data);
         const roomTimetable = response.data;
         setTimetables([roomTimetable]);
         setConfig({
@@ -100,7 +103,14 @@ export default function RoomDetail() {
     if (roomId) {
       fetchData();
     }
-  }, [roomId, toast, setIsLoading]);
+  }, [
+    roomId,
+    toast,
+    setIsLoading,
+    setSelectedRoom,
+    config.collegeTime,
+    config.breaks,
+  ]);
 
   const handleCollegeTimeChange = (field: keyof CollegeTime, value: string) => {
     setConfig((prev) => ({
@@ -136,11 +146,13 @@ export default function RoomDetail() {
   const handleGenerateSuccess = async (payload: any) => {
     setIsLoading(true);
     try {
+      console.log("Generating timetable with payload from room :", payload);
       const response = await axios.post(
         `${
           import.meta.env.VITE_APP_API_BASE_URL
         }/timetable/room/${roomId}/generate`,
-        payload,{
+        payload,
+        {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -155,7 +167,8 @@ export default function RoomDetail() {
       if (result.success) {
         setIsGenerateModalOpen(false);
         const data = await axios.get(
-          `${import.meta.env.VITE_APP_API_BASE_URL}/timetable/room/${roomId}`,{
+          `${import.meta.env.VITE_APP_API_BASE_URL}/timetable/room/${roomId}`,
+          {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
@@ -197,19 +210,16 @@ export default function RoomDetail() {
           <Button asChild variant="outline" size="sm" className="mb-4">
             <Link to="/rooms">Back to All Rooms</Link>
           </Button>
-          <h1 className="text-2xl font-bold">Room:{config.name} </h1>
-          <p className="text-muted-foreground">
-            Manage configuration and schedule for this room.
-          </p>
         </div>
       </div>
 
       <Tabs defaultValue="subjects" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="subjects">Subjects</TabsTrigger>
           <TabsTrigger value="faculty">Faculty</TabsTrigger>
           <TabsTrigger value="breaks">Breaks</TabsTrigger>
           <TabsTrigger value="timings">Timings</TabsTrigger>
+          <TabsTrigger value="timetable">Timetable</TabsTrigger>
         </TabsList>
 
         <TabsContent value="subjects" className="mt-4">
@@ -337,12 +347,16 @@ export default function RoomDetail() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="timetable" className="mt-4">
+          <Timetable />
+        </TabsContent>
       </Tabs>
 
       <div className="flex justify-center">
         {isAdmin && (
           <Button size="lg" onClick={handleGenerateClick}>
-            Generate Timetable for {roomId}
+            Generate Timetable for the Room {config.name}
           </Button>
         )}
       </div>
@@ -352,7 +366,7 @@ export default function RoomDetail() {
         onOpenChange={setIsGenerateModalOpen}
         config={config}
         onGenerateSuccess={handleGenerateSuccess}
-        isLoading={false} // Controlled by setIsLoading
+        isLoading={false}
       />
     </div>
   );

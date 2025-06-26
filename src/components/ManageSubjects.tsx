@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { TimetableConfig, SubjectConfig } from "@/data/schedule";
+import { TimetableConfig, SubjectConfig, FacultyConfig } from "@/data/schedule";
 import {
   Card,
   CardContent,
@@ -41,6 +41,7 @@ export function ManageSubjects({
     null
   );
   const [subjects, setSubjects] = useState<SubjectConfig[]>([]);
+  const [faculty, setFaculty] = useState<FacultyConfig[]>([]);
 
   const fetchSubjects = async () => {
     if (!selectedRoom || !token) return;
@@ -54,17 +55,16 @@ export function ManageSubjects({
           },
         }
       );
-      
-      // Transform backend data to frontend format
+
       const transformedSubjects = response.data.map((s: any) => ({
-        id: s._id,
+        _id: s._id,
         name: s.name,
         duration: s.time,
         no_of_classes_per_week: s.noOfClassesPerWeek,
         facultyIds: s.faculty?.map((f: any) => f.facultyId || f._id) || [],
         isSpecial: s.isSpecial || false,
       }));
-      
+
       setSubjects(transformedSubjects);
     } catch (error) {
       console.error("Error fetching subjects:", error);
@@ -78,9 +78,47 @@ export function ManageSubjects({
     }
   };
 
+  const fetchFaculty = async () => {
+    if (!selectedRoom || !token) return;
+    setIsLoading(true);
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_APP_API_BASE_URL}/faculty/room/${selectedRoom}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const transformedFaculty = response.data.map((f: any) => ({
+        _id: f.facultyId || f._id,
+        name: f.name,
+        availability: f.availability || [],
+      }));
+
+      setFaculty(transformedFaculty);
+      // Update config.faculty to keep it in sync
+      setConfig({
+        ...config,
+        faculty: transformedFaculty,
+      });
+    } catch (error) {
+      console.error("Error fetching faculty:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch faculty data.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (selectedRoom && token) {
       fetchSubjects();
+      fetchFaculty();
     }
   }, [selectedRoom, token]);
 
@@ -113,7 +151,9 @@ export function ManageSubjects({
     setIsLoading(true);
     try {
       await axios.delete(
-        `${import.meta.env.VITE_APP_API_BASE_URL}/subject/room/${selectedRoom}/${subjectId}`,
+        `${
+          import.meta.env.VITE_APP_API_BASE_URL
+        }/subject/room/${selectedRoom}/${subjectId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -169,7 +209,7 @@ export function ManageSubjects({
             <TableBody>
               {subjects.length > 0 ? (
                 subjects.map((subject) => (
-                  <TableRow key={subject.id}>
+                  <TableRow key={subject._id}>
                     <TableCell className="font-medium">
                       {subject.name}
                     </TableCell>
@@ -177,10 +217,7 @@ export function ManageSubjects({
                     <TableCell>{subject.no_of_classes_per_week}</TableCell>
                     <TableCell>
                       {subject.facultyIds
-                        .map(
-                          (fid) =>
-                            config.faculty.find((f) => f.id === fid)?.name
-                        )
+                        .map((fid) => faculty.find((f) => f._id === fid)?.name)
                         .filter(Boolean)
                         .join(", ") || "None"}
                     </TableCell>
@@ -196,7 +233,7 @@ export function ManageSubjects({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDeleteSubject(subject.id)}
+                          onClick={() => handleDeleteSubject(subject._id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -222,7 +259,7 @@ export function ManageSubjects({
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}
         subject={editingSubject}
-        allFaculty={config.faculty}
+        allFaculty={faculty} // Use fetched faculty
         onSaveSuccess={fetchSubjects}
       />
     </>

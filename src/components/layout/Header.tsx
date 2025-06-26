@@ -11,23 +11,34 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export function Header() {
   const { role, logout } = useApp();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  // Check if we're on a room detail page
+  const isRoomDetailPage = location.pathname.includes('/rooms/') && location.pathname !== '/rooms';
+
   return (
     <header className="flex-shrink-0 bg-card border-b border-border">
       <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-        <div>
-          {/* Mobile menu button could go here */}
+        <div className="flex items-center">
+          {isRoomDetailPage && (
+            <div>
+              <h1 className="text-xl font-bold">AI-Driven Automated Scheduling System</h1>
+              <p className="text-sm text-muted-foreground">
+                Manage configuration and schedule for this room
+              </p>
+            </div>
+          )}
         </div>
         <div className="flex items-center space-x-4">
           <button
