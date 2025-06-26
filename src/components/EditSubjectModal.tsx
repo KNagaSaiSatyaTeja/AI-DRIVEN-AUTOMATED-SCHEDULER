@@ -95,7 +95,7 @@ export function EditSubjectModal({
 
       if (subject) {
         await axios.put(
-          `${import.meta.env.VITE_APP_API_BASE_URL}/subject/room/${selectedRoom}/${subject._id}`,
+          `${import.meta.env.VITE_APP_API_BASE_URL}/subject/room/${selectedRoom}/${subject.id}`,
           payload,
           {
             headers: {
@@ -205,29 +205,29 @@ export function EditSubjectModal({
                       {allFaculty.length > 0 ? (
                         allFaculty.map((faculty) => (
                           <FormField
-                            key={faculty._id}
+                            key={faculty.id}
                             control={form.control}
                             name="facultyIds"
                             render={({ field }) => {
                               return (
                                 <FormItem
-                                  key={faculty._id}
+                                  key={faculty.id}
                                   className="flex flex-row items-start space-x-3 space-y-0"
                                 >
                                   <FormControl>
                                     <Checkbox
                                       checked={field.value?.includes(
-                                        faculty._id
+                                        faculty.id
                                       )}
                                       onCheckedChange={(checked) => {
                                         return checked
                                           ? field.onChange([
                                               ...(field.value || []),
-                                              faculty._id,
+                                              faculty.id,
                                             ])
                                           : field.onChange(
                                               field.value?.filter(
-                                                (value) => value !== faculty._id
+                                                (value) => value !== faculty.id
                                               )
                                             );
                                       }}

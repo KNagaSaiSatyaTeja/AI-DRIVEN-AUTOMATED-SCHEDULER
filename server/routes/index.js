@@ -11,6 +11,6 @@ router.use("/auth", authRoutes);
 router.use("/timetable", timetableRoutes);
 router.use("/rooms", roomRoutes);
 router.use("/faculty", facultyRoutes);
-router.use("/subject", subjectRoutes);
+router.use("/subjects", subjectRoutes);
 
 module.exports = router;

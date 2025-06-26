@@ -60,7 +60,7 @@ const roomScheduleSchema = new mongoose.Schema({
 });
 
 const timetableSchema = new mongoose.Schema({
-  subjects: [{ type: String, required: true }],
+  subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
   breaks: [breakSchema],
   collegeTime: collegeTimeSchema,
   rooms: [{ type: mongoose.Schema.Types.ObjectId, ref: "Room" }],

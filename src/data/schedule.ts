@@ -1,4 +1,3 @@
-
 export interface ScheduleEntry {
   time: string;
   subject: string;
@@ -52,13 +51,13 @@ endTime: string;
 }
 
 export interface FacultyConfig {
-_id: string;
+id: string;
 name: string;
 availability: FacultyAvailability[];
 }
 
 export interface SubjectConfig {
-_id: string;
+id: string;
 name: string;
 duration: number; // in minutes
 no_of_classes_per_week: number;

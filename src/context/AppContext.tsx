@@ -1,16 +1,7 @@
-import React, {
-  createContext,
-  useState,
-  useContext,
-  ReactNode,
-  useEffect,
-} from "react";
-import {
-  ScheduleEntry,
-  TimetableConfig,
-  initialTimeSlots,
-} from "@/data/schedule";
-import { timetableAPI } from "@/services/api";
+
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { ScheduleEntry, TimetableConfig, SubjectConfig, FacultyConfig, initialTimeSlots, configDays, CollegeTime, BreakConfig, FacultyAvailability } from '@/data/schedule';
+import axios, { AxiosError } from 'axios';
 
 // Import types from backend models (assumed based on previous response)
 interface RoomSchedule {
@@ -21,8 +12,8 @@ interface RoomSchedule {
 interface Timetable {
   _id: string;
   subjects: string[]; // Array of subject IDs
-  breaks: any[];
-  collegeTime: any;
+  breaks: BreakConfig[];
+  collegeTime: CollegeTime;
   rooms: string[]; // Array of room IDs
   schedule: ScheduleEntry[];
   roomWiseSchedules: RoomSchedule[];
@@ -30,7 +21,7 @@ interface Timetable {
   updatedAt: Date;
 }
 
-type Role = "admin" | "user";
+type Role = 'admin' | 'user';
 
 interface AppContextType {
   role: Role | null;
@@ -42,19 +33,10 @@ interface AppContextType {
   setIsLoading: (loading: boolean) => void;
   selectedRoom: string | null;
   setSelectedRoom: (roomId: string | null) => void;
-  generateSchedule: (
-    payload: TimetableConfig
-  ) => Promise<{ success: boolean; message: string }>;
+  generateSchedule: (payload: TimetableConfig) => Promise<{ success: boolean; message: string }>;
   getTimetables: (roomId?: string) => Promise<Timetable[]>;
-  createTimetable: (
-    roomId: string,
-    data: TimetableConfig
-  ) => Promise<Timetable>;
-  updateTimetable: (
-    roomId: string,
-    id: string,
-    data: TimetableConfig
-  ) => Promise<Timetable>;
+  createTimetable: (roomId: string, data: TimetableConfig) => Promise<Timetable>;
+  updateTimetable: (roomId: string, id: string, data: TimetableConfig) => Promise<Timetable>;
   timetables: Timetable[];
   schedule: ScheduleEntry[];
   timeSlots: string[];
@@ -63,6 +45,8 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+
+const API_BASE_URL = import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api';
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRoleState] = useState<Role | null>(null);
@@ -75,125 +59,109 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Initialize from localStorage on mount
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedRole = localStorage.getItem("role") as Role | null;
-    console.log(
-      "Initializing from localStorage - Token:",
-      storedToken,
-      "Role:",
-      storedRole
-    ); // Debug initial state
+    const storedToken = localStorage.getItem('token');
+    const storedRole = localStorage.getItem('role') as Role | null;
+    
     if (storedToken && storedRole) {
       setTokenState(storedToken);
       setRoleState(storedRole);
     }
   }, []);
 
+  // Create axios instance with token
+  const createAuthenticatedAxios = () => {
+    return axios.create({
+      baseURL: API_BASE_URL,
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
+  };
+
   const setRole = (newRole: Role | null) => {
-    console.log("Setting role to:", newRole); // Debug role update
     setRoleState(newRole);
     if (newRole) {
-      localStorage.setItem("role", newRole);
+      localStorage.setItem('role', newRole);
     } else {
-      localStorage.removeItem("role");
+      localStorage.removeItem('role');
     }
   };
 
   const setToken = (newToken: string | null) => {
-    console.log("Setting token to:", newToken); // Debug token update
     setTokenState(newToken);
     if (newToken) {
-      localStorage.setItem("token", newToken);
-      console.log(
-        "Token stored in localStorage:",
-        localStorage.getItem("token")
-      ); // Verify storage
+      localStorage.setItem('token', newToken);
     } else {
-      localStorage.removeItem("token");
+      localStorage.removeItem('token');
     }
   };
 
   const logout = () => {
-    console.log("Logging out"); // Debug logout
     setRoleState(null);
     setTokenState(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    // Clear other unnecessary data
     localStorage.clear();
   };
 
   const getTimetables = async (roomId?: string): Promise<Timetable[]> => {
     try {
-      const data = await timetableAPI.getAll(roomId);
-      setTimetables(data);
-      return data;
+      const api = createAuthenticatedAxios();
+      const response = await api.get<Timetable[]>(roomId ? `/timetable/room/${roomId}` : '/timetable');
+      setTimetables(response.data);
+      return response.data;
     } catch (error) {
-      console.error("Error fetching timetables:", error);
+      console.error('Error fetching timetables:', error);
       return [];
     }
   };
 
-  const createTimetable = async (
-    roomId: string,
-    data: TimetableConfig
-  ): Promise<Timetable> => {
+  const createTimetable = async (roomId: string, data: TimetableConfig): Promise<Timetable> => {
     try {
-      const response = await timetableAPI.generate(roomId, data);
-      return response;
+      const api = createAuthenticatedAxios();
+      const response = await api.post<Timetable>(`/timetable/room/${roomId}/generate`, data);
+      return response.data;
     } catch (error) {
-      console.error("Error creating timetable:", error);
+      console.error('Error creating timetable:', error);
       throw error;
     }
   };
 
-  const updateTimetable = async (
-    roomId: string,
-    id: string,
-    data: TimetableConfig
-  ): Promise<Timetable> => {
+  const updateTimetable = async (roomId: string, id: string, data: TimetableConfig): Promise<Timetable> => {
     try {
-      const response = await timetableAPI.update(roomId, id, data);
-      return response;
+      const api = createAuthenticatedAxios();
+      const response = await api.put<Timetable>(`/timetable/room/${roomId}/${id}`, data);
+      return response.data;
     } catch (error) {
-      console.error("Error updating timetable:", error);
+      console.error('Error updating timetable:', error);
       throw error;
     }
   };
 
-  const generateSchedule = async (
-    payload: TimetableConfig
-  ): Promise<{ success: boolean; message: string }> => {
-    console.log(
-      "Sending payload for timetable generation:",
-      JSON.stringify(payload, null, 2)
-    );
-    if (!selectedRoom) throw new Error("No room selected");
+  const generateSchedule = async (payload: TimetableConfig): Promise<{ success: boolean; message: string }> => {
+    console.log("Sending payload for timetable generation:", JSON.stringify(payload, null, 2));
+    if (!selectedRoom) throw new Error('No room selected');
     setIsLoading(true);
 
     try {
       const response = await createTimetable(selectedRoom, payload);
       await getTimetables(selectedRoom);
       setIsLoading(false);
-      return {
-        success: true,
-        message: "New timetable generated successfully!",
-      };
-    } catch (error: any) {
+      return { success: true, message: 'New timetable generated successfully!' };
+    } catch (error) {
       console.error("Failed to generate timetable:", error);
       setIsLoading(false);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Unknown server error";
-      return { success: false, message: `Generation failed: ${errorMessage}` };
+      if (error instanceof AxiosError) {
+        const errorMessage = error.response?.data?.message || error.message || 'Unknown server error';
+        return { success: false, message: `Generation failed: ${errorMessage}` };
+      }
+      return { success: false, message: 'An unexpected error occurred while generating the timetable.' };
     }
   };
 
   const updateSchedule = (entry: ScheduleEntry) => {
-    setSchedule((prev) => {
+    setSchedule(prev => {
       const existingIndex = prev.findIndex(
-        (e) =>
-          e.day === entry.day && e.time === entry.time && e.room === entry.room
+        e => e.day === entry.day && e.time === entry.time && e.room === entry.room
       );
       if (existingIndex >= 0) {
         const updated = [...prev];
@@ -206,15 +174,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const deleteSchedule = (entry: ScheduleEntry) => {
-    setSchedule((prev) =>
-      prev.filter(
-        (e) =>
-          !(
-            e.day === entry.day &&
-            e.time === entry.time &&
-            e.room === entry.room
-          )
-      )
+    setSchedule(prev => 
+      prev.filter(e => !(e.day === entry.day && e.time === entry.time && e.room === entry.room))
     );
   };
 
@@ -224,15 +185,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [selectedRoom, token]);
 
-  const value = {
-    role,
+  const value = { 
+    role, 
     token,
-    setRole,
+    setRole, 
     setToken,
-    logout,
-    isLoading,
-    setIsLoading,
-    selectedRoom,
+    logout, 
+    isLoading, 
+    setIsLoading, 
+    selectedRoom, 
     setSelectedRoom,
     generateSchedule,
     getTimetables,
@@ -242,16 +203,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     schedule,
     timeSlots,
     updateSchedule,
-    deleteSchedule,
+    deleteSchedule
   };
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={value}>
+      {children}
+    </AppContext.Provider>
+  );
 };
 
 export const useApp = () => {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error("useApp must be used within an AppProvider");
+    throw new Error('useApp must be used within an AppProvider');
   }
   return context;
 };
