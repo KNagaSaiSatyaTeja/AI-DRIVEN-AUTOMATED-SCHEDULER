@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -56,11 +55,13 @@ const LoginPage = () => {
         description: `Welcome back, ${role === "admin" ? "Admin" : "User"}!`,
       });
       navigate("/");
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Invalid Credentials",
-        description: error.response?.data?.message || "Please check your email and password.",
+        description:
+          error.response?.data?.message ||
+          "Please check your email and password.",
       });
     }
   }
@@ -84,8 +85,8 @@ const LoginPage = () => {
             AI-Driven Automated Scheduler
           </CardTitle>
           <CardDescription>
-            {isRegistering 
-              ? "Create a new account to get started." 
+            {isRegistering
+              ? "Create a new account to get started."
               : "Enter your credentials to access your dashboard."}
           </CardDescription>
         </CardHeader>
@@ -94,8 +95,8 @@ const LoginPage = () => {
             <>
               <RegisterForm onSuccess={handleRegisterSuccess} />
               <div className="mt-4 text-center">
-                <Button 
-                  variant="link" 
+                <Button
+                  variant="link"
                   onClick={() => setIsRegistering(false)}
                   className="text-sm"
                 >
@@ -106,7 +107,10 @@ const LoginPage = () => {
           ) : (
             <>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                >
                   <FormField
                     control={form.control}
                     name="email"
@@ -143,8 +147,8 @@ const LoginPage = () => {
                 </form>
               </Form>
               <div className="mt-4 text-center">
-                <Button 
-                  variant="link" 
+                <Button
+                  variant="link"
                   onClick={() => setIsRegistering(true)}
                   className="text-sm"
                 >

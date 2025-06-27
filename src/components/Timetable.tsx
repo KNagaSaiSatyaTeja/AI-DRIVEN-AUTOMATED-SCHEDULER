@@ -70,8 +70,8 @@ export function Timetable() {
     endpoint: string,
     options: {
       method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-      data?: any;
-      params?: any;
+      data?: unknown;
+      params?: unknown;
       headers?: Record<string, string>;
     } = {}
   ) => {

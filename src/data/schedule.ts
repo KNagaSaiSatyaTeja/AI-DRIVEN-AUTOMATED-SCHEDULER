@@ -17,7 +17,7 @@ interface TimetableWithRooms {
 }
 
 // Utility function to get rooms from timetables
-export const getUniqueRooms = (subjects: any[]) => {
+export const getUniqueRooms = (subjects: { room?: { name?: string } }[]) => {
   const roomNames = subjects.map((s) => s.room?.name).filter(Boolean);
   return Array.from(new Set(roomNames));
 };

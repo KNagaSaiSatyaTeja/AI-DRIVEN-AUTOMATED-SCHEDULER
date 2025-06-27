@@ -89,7 +89,7 @@ export default function RoomDetail() {
     faculty: [],
   });
 
-  const [timetables, setTimetables] = useState<any[]>([]);
+  const [timetables, setTimetables] = useState<unknown[]>([]);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
 
   useEffect(() => {
@@ -217,7 +217,7 @@ export default function RoomDetail() {
     }
   };
 
-  const updateBreak = (index: number, field: keyof BreakConfig, value: any) => {
+  const updateBreak = (index: number, field: keyof BreakConfig, value: unknown) => {
     setConfig((prev) => {
       const newBreaks = [...prev.breaks];
       newBreaks[index] = { ...newBreaks[index], [field]: value };

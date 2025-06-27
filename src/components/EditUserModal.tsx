@@ -9,8 +9,18 @@ import { toast } from '@/components/ui/use-toast';
 import { useApp } from '@/context/AppContext';
 import axios from 'axios';
 
+
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: 'user' | 'admin';
+  createdAt: string; // or Date, if parsed
+  updatedAt: string; // or Date
+  __v: number;
+}
 interface EditUserModalProps {
-  user: any;
+  user: User;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onUserUpdated?: () => void;
@@ -32,7 +42,7 @@ export function EditUserModal({ user, isOpen, onOpenChange, onUserUpdated }: Edi
     setIsLoading(true);
     try {
       await axios.put(
-        `${import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api'}/users/${user._id}`,
+        `${import.meta.env.VITE_APP_API_BASE_URL}/users/${user._id}`,
         formData,
         {
           headers: {
@@ -90,7 +100,7 @@ export function EditUserModal({ user, isOpen, onOpenChange, onUserUpdated }: Edi
           </div>
           <div className="space-y-2">
             <Label htmlFor="role">Role</Label>
-            <Select value={formData.role} onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}>
+            <Select value={formData.role} onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as "user" | "admin" }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>

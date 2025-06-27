@@ -49,7 +49,7 @@ interface Subject {
     facultyId: string;
     name: string;
     room: string;
-    availability: any[];
+    availability: unknown[];
   }>; // Faculty is an array of objects, not just IDs
   isSpecial: boolean;
   createdAt: string;
@@ -60,7 +60,7 @@ interface GenerateTimetableModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   config: TimetableConfig;
-  onGenerateSuccess: (payload: any) => void;
+  onGenerateSuccess: (payload: unknown) => void;
   isLoading: boolean;
 }
 
@@ -189,7 +189,7 @@ export function GenerateTimetableModal({
   ) => {
     const newBreaks = [...localConfig.breaks];
     const breakToUpdate = { ...newBreaks[index] };
-    (breakToUpdate as any)[field] = value;
+    (breakToUpdate as unknown)[field] = value;
     newBreaks[index] = breakToUpdate;
     setLocalConfig((prev) => ({ ...prev, breaks: newBreaks }));
   };
