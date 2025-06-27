@@ -94,6 +94,17 @@ router.put("/room/:roomId/:id", [auth, adminOnly], async (req, res) => {
   }
 });
 
+router.get("/", [auth], async (req, res) => {
+  try {
+    const subjects = await Subject.find()
+      .populate("room", "name")
+      .populate("faculty", "name");
+    res.json(subjects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.delete("/room/:roomId/:id", [auth, adminOnly], async (req, res) => {
   const { roomId, id } = req.params;
   try {

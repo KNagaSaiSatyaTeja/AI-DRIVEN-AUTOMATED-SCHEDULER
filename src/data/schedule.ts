@@ -17,15 +17,11 @@ interface TimetableWithRooms {
 }
 
 // Utility function to get rooms from timetables
-export const getUniqueRooms = (timetables: TimetableWithRooms[] = []): string[] => {
-  const rooms = new Set<string>();
-  timetables.forEach(timetable => {
-      if (timetable.roomWiseSchedules) {
-          timetable.roomWiseSchedules.forEach((rs: { room: string }) => rooms.add(rs.room));
-      }
-  });
-  return Array.from(rooms).sort();
+export const getUniqueRooms = (subjects: any[]) => {
+  const roomNames = subjects.map((s) => s.room?.name).filter(Boolean);
+  return Array.from(new Set(roomNames));
 };
+
 
 // --- Timetable Configuration Types ---
 

@@ -82,6 +82,8 @@ export function GenerateTimetableModal({
 
   // Fetch subjects from backend
   const fetchSubjects = useCallback(async () => {
+    if (!selectedRoom) return;
+
     setSubjectsLoading(true);
     setSubjectsError(null);
 
@@ -136,12 +138,20 @@ export function GenerateTimetableModal({
     }
   }, [config.subjects, selectedRoom]);
 
+  // Reset subjects and selection when room changes
   useEffect(() => {
-    if (isOpen) {
+    console.log("Room changed to:", selectedRoom);
+    setSubjects([]);
+    setSelectedSubjectIds([]);
+    setSubjectsError(null);
+  }, [selectedRoom]);
+
+  useEffect(() => {
+    if (isOpen && selectedRoom) {
       setLocalConfig(config);
       fetchSubjects();
     }
-  }, [isOpen, config, fetchSubjects]);
+  }, [isOpen, config, fetchSubjects, selectedRoom]);
 
   // Add useEffect to log selectedSubjectIds changes
   useEffect(() => {
@@ -197,7 +207,15 @@ export function GenerateTimetableModal({
   };
 
   const handleConfirm = () => {
-    if (!selectedRoom) return;
+    if (!selectedRoom) {
+      toast({
+        title: "Room Required",
+        description: "Please select a room first",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
 
     console.log("Selected subjects:", selectedSubjectIds);
     console.log("All subjects data:", subjects);
@@ -211,6 +229,16 @@ export function GenerateTimetableModal({
       toast({
         title: "Configuration Error",
         description: "College time configuration is missing",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
+    if (selectedSubjectIds.length === 0) {
+      toast({
+        title: "Subjects Required",
+        description: "Please select at least one subject",
         variant: "destructive",
         duration: 3000,
       });
@@ -258,7 +286,7 @@ export function GenerateTimetableModal({
       rooms: [selectedRoom],
     };
 
-    console.log("Generated payload:", JSON.stringify(payload));
+    console.log("Generated payload:", JSON.stringify(payload, null, 2));
 
     onGenerateSuccess(payload);
   };
@@ -284,10 +312,24 @@ export function GenerateTimetableModal({
               </CardTitle>
               <CardDescription>
                 Select subjects to include in the timetable.
+                {selectedRoom && (
+                  <span className="block text-xs mt-1">
+                    Room: {selectedRoom}
+                  </span>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              {subjectsError && (
+              {!selectedRoom && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Please select a room to load subjects.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {subjectsError && selectedRoom && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="flex items-center justify-between">
@@ -304,12 +346,12 @@ export function GenerateTimetableModal({
                 </Alert>
               )}
 
-              {subjectsLoading ? (
+              {subjectsLoading && selectedRoom ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="text-center">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground">
-                      Loading subjects...
+                      Loading subjects for selected room...
                     </p>
                   </div>
                 </div>
@@ -347,9 +389,9 @@ export function GenerateTimetableModal({
                       </div>
                     </div>
                   ))}
-                  {subjects.length === 0 && !subjectsError && (
+                  {subjects.length === 0 && !subjectsError && selectedRoom && (
                     <p className="text-sm text-muted-foreground">
-                      No subjects found.
+                      No subjects found for this room.
                     </p>
                   )}
                 </>
@@ -456,7 +498,10 @@ export function GenerateTimetableModal({
             type="button"
             onClick={handleConfirm}
             disabled={
-              isLoading || subjectsLoading || selectedSubjectIds.length === 0
+              isLoading ||
+              subjectsLoading ||
+              selectedSubjectIds.length === 0 ||
+              !selectedRoom
             }
           >
             {isLoading && <Loader2 className="animate-spin mr-2 h-4 w-4" />}

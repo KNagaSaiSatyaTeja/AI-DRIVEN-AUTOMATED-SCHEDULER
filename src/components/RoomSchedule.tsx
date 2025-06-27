@@ -1,90 +1,67 @@
-
-// import { useApp } from '@/context/AppContext';
-// import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-// import { Link } from 'react-router-dom';
-// import { Button } from '@/components/ui/button';
-// import { ArrowRight } from 'lucide-react';
-// import { Badge } from '@/components/ui/badge';
-
-// interface RoomScheduleProps {
-//   roomId: string;
-// }
-
-// export function RoomSchedule({ roomId }: RoomScheduleProps) {
-//   const { schedule } = useApp();
-//   const roomSchedule = schedule.filter(entry => entry.room === roomId);
-//   const subjects = [...new Set(roomSchedule.map(e => e.subject).filter(s => s && s !== 'Break'))];
-//   const faculty = [...new Set(roomSchedule.map(e => e.faculty).filter(f => f))];
-
-//   return (
-//     <Card>
-//       <CardHeader className="flex flex-row items-center justify-between pb-4">
-//         <CardTitle className="text-lg">Room: {roomId}</CardTitle>
-//         <Button asChild variant="outline" size="sm">
-//           <Link to={`/rooms/${roomId}`}>
-//             View & Manage
-//             <ArrowRight className="ml-2 h-4 w-4" />
-//           </Link>
-//         </Button>
-//       </CardHeader>
-//       <CardContent>
-//         <div className="space-y-4">
-//             {subjects.length > 0 && (
-//                 <div>
-//                     <h4 className="font-semibold mb-2 text-sm text-muted-foreground">Subjects</h4>
-//                     <div className="flex flex-wrap gap-2">
-//                         {subjects.map((s, index) => <Badge key={`subject-${index}`} variant="secondary">{s}</Badge>)}
-//                     </div>
-//                 </div>
-//             )}
-//             {faculty.length > 0 && (
-//                 <div>
-//                     <h4 className="font-semibold mb-2 text-sm text-muted-foreground">Faculty</h4>
-//                     <div className="flex flex-wrap gap-2">
-//                         {faculty.map((f, index) => <Badge key={`faculty-${index}`} variant="outline">{f}</Badge>)}
-//                     </div>
-//                 </div>
-//             )}
-//              {(subjects.length === 0 && faculty.length === 0) && (
-//                 <p className="text-muted-foreground text-sm">No schedule information available for this room.</p>
-//             )}
-//         </div>
-//       </CardContent>
-//     </Card>
-//   );
-// }
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useEffect } from "react";
-import { useApp } from "@/context/AppContext";
+
+
+
+
+export interface Faculty {
+  _id: string;
+  name: string;
+}
+
+export interface Room {
+  _id: string;
+  name: string;
+}
+
+export interface Subject {
+  _id: string;
+  name: string;
+  time: number;
+  noOfClassesPerWeek: number;
+  room: Room;
+  faculty: Faculty[];
+  isSpecial: boolean;
+  createdAt: string; // or Date, if parsed
+  updatedAt: string; // or Date
+  __v: number;
+}
 
 interface RoomScheduleProps {
   roomId: string;
+  roomName: string;
+  subjects: Subject[];
 }
 
-export function RoomSchedule({ roomId }: RoomScheduleProps) {
-  const { schedule, timetables } = useApp();
-  const roomSchedule = schedule.filter((entry) => entry.room === roomId);
-  const subjects = [
+
+
+export function RoomSchedule({
+  roomId,
+  roomName,
+  subjects,
+}: RoomScheduleProps) {
+  // Filter subjects that belong to this room
+  const roomSubjects = subjects.filter(
+    (subject) => subject.room?._id === roomId
+  );
+
+  // Get unique subject names
+  const subjectNames = [...new Set(roomSubjects.map((s) => s.name))];
+
+  // Get unique faculty names
+  const facultyNames = [
     ...new Set(
-      roomSchedule.map((e) => e.subject).filter((s) => s && s !== "Break")
+      roomSubjects.flatMap((s) => s.faculty?.map((f: Faculty) => f.name) || [])
     ),
   ];
-  const faculty = [
-    ...new Set(roomSchedule.map((e) => e.faculty).filter((f) => f)),
-  ];
-
-  useEffect(() => {
-    // Fetch timetable data if needed
-  }, [roomId]);
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <CardTitle className="text-lg">Room: {roomId}</CardTitle>
+        <CardTitle className="text-lg">Room: {roomName}</CardTitle>
         <Button asChild variant="outline" size="sm">
           <Link to={`/rooms/${roomId}`}>
             View & Manage
@@ -94,35 +71,37 @@ export function RoomSchedule({ roomId }: RoomScheduleProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {subjects.length > 0 && (
+          {subjectNames.length > 0 && (
             <div>
               <h4 className="font-semibold mb-2 text-sm text-muted-foreground">
                 Subjects
               </h4>
               <div className="flex flex-wrap gap-2">
-                {subjects.map((s, index) => (
+                {subjectNames.map((name, index) => (
                   <Badge key={`subject-${index}`} variant="secondary">
-                    {String(s)}
+                    {name}
                   </Badge>
                 ))}
               </div>
             </div>
           )}
-          {faculty.length > 0 && (
+
+          {facultyNames.length > 0 && (
             <div>
               <h4 className="font-semibold mb-2 text-sm text-muted-foreground">
                 Faculty
               </h4>
               <div className="flex flex-wrap gap-2">
-                {faculty.map((f, index) => (
+                {facultyNames.map((name, index) => (
                   <Badge key={`faculty-${index}`} variant="outline">
-                    {f}
+                    {name}
                   </Badge>
                 ))}
               </div>
             </div>
           )}
-          {subjects.length === 0 && faculty.length === 0 && (
+
+          {subjectNames.length === 0 && facultyNames.length === 0 && (
             <p className="text-muted-foreground text-sm">
               No schedule information available for this room.
             </p>
@@ -131,30 +110,4 @@ export function RoomSchedule({ roomId }: RoomScheduleProps) {
       </CardContent>
     </Card>
   );
-type ScheduleEntry = {
-  room: string;
-  subject: string;
-  faculty: string;
-};
-
-type TimetableEntry = {
-  room: string;
-  times: string[];
-};
-
-function useApp(): { schedule: ScheduleEntry[]; timetables: TimetableEntry[] } {
-  // Example mock data for demonstration purposes
-  return {
-    schedule: [
-      { room: "101", subject: "Math", faculty: "Dr. Smith" },
-      { room: "101", subject: "Physics", faculty: "Dr. Brown" },
-      { room: "102", subject: "Chemistry", faculty: "Dr. Green" },
-      { room: "101", subject: "Break", faculty: "" },
-    ],
-    timetables: [
-      // Example timetable data structure
-      { room: "101", times: ["9:00", "10:00"] },
-    ],
-  };
-}
 }

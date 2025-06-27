@@ -166,7 +166,7 @@ router.post("/room/:roomId/generate", [auth, adminOnly], async (req, res) => {
     }
 
     // Check if timetable already exists for this room
-    let existingTimetable = await Timetable.findOne({});
+    let existingTimetable = await Timetable.findOne({ room: roomId });
 
     // For room-specific filtering, we'll use the schema methods
     let savedTimetable;
@@ -182,6 +182,7 @@ router.post("/room/:roomId/generate", [auth, adminOnly], async (req, res) => {
     } else {
       // Create new timetable using the schema static method
       savedTimetable = Timetable.createFromFastAPIResponse(fastapiData);
+      savedTimetable.room = roomId;
       await savedTimetable.save();
     }
 
@@ -196,6 +197,7 @@ router.post("/room/:roomId/generate", [auth, adminOnly], async (req, res) => {
       timetable: savedTimetable,
       roomSchedule: roomSchedule,
       isUpdate: isUpdate,
+      name: room.name,
       fastapiResponse: fastapiData,
       scheduleQuality: {
         fitness: fastapiData.fitness,
@@ -257,7 +259,7 @@ router.get("/room/:roomId", auth, async (req, res) => {
     const room = await Room.findById(roomId);
     if (!room) return res.status(404).json({ message: "Room not found" });
 
-    const timetable = await Timetable.findOne({});
+    const timetable = await Timetable.findOne({ room: roomId });
     if (!timetable) {
       return res.status(404).json({ message: "No timetable found" });
     }
@@ -268,6 +270,7 @@ router.get("/room/:roomId", auth, async (req, res) => {
     res.json({
       id: timetable._id,
       roomId: roomId,
+      name: room.name,
       schedule: roomSchedule,
       timeSlots: timetable.time_slots,
       createdAt: timetable.createdAt,
@@ -411,7 +414,10 @@ router.put("/room/:roomId/:id", [auth, adminOnly], async (req, res) => {
 // Get all timetables
 router.get("/", auth, async (req, res) => {
   try {
-    const timetables = await Timetable.find();
+    const timetables = await Timetable.find()
+      .populate("room", "name")
+
+
     res.json(timetables);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -427,80 +433,6 @@ router.delete("/:id", [auth, adminOnly], async (req, res) => {
       return res.status(404).json({ message: "Timetable not found" });
 
     res.json({ message: "Timetable deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Get complete weekly schedule
-router.get("/weekly/schedule", auth, async (req, res) => {
-  try {
-    const timetable = await Timetable.findOne({});
-    if (!timetable) {
-      return res.status(404).json({ message: "No timetable found" });
-    }
-
-    res.json({
-      id: timetable._id,
-      timeSlots: timetable.time_slots,
-      days: timetable.days,
-      createdAt: timetable.createdAt,
-      updatedAt: timetable.updatedAt,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Get schedule statistics
-router.get("/stats/overview", auth, async (req, res) => {
-  try {
-    const timetable = await Timetable.findOne({});
-    if (!timetable) {
-      return res.status(404).json({ message: "No timetable found" });
-    }
-
-    const stats = {
-      totalTimeSlots: timetable.time_slots.length,
-      totalScheduleEntries: 0,
-      roomsInUse: new Set(),
-      facultyInUse: new Set(),
-      subjectsScheduled: new Set(),
-      dayWiseStats: {},
-    };
-
-    const dayNames = [
-      "MONDAY",
-      "TUESDAY",
-      "WEDNESDAY",
-      "THURSDAY",
-      "FRIDAY",
-      "SATURDAY",
-    ];
-
-    dayNames.forEach((day) => {
-      const daySchedule = timetable.days[day] || [];
-      stats.totalScheduleEntries += daySchedule.length;
-      stats.dayWiseStats[day] = daySchedule.length;
-
-      daySchedule.forEach((entry) => {
-        stats.roomsInUse.add(entry.room_id);
-        stats.facultyInUse.add(entry.faculty_id);
-        stats.subjectsScheduled.add(entry.subject_name);
-      });
-    });
-
-    // Convert Sets to arrays for JSON response
-    stats.roomsInUse = Array.from(stats.roomsInUse);
-    stats.facultyInUse = Array.from(stats.facultyInUse);
-    stats.subjectsScheduled = Array.from(stats.subjectsScheduled);
-
-    res.json({
-      timetableId: timetable._id,
-      statistics: stats,
-      createdAt: timetable.createdAt,
-      updatedAt: timetable.updatedAt,
-    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

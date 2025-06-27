@@ -37,6 +37,36 @@ import { GenerateTimetableModal } from "@/components/GenerateTimetableModal";
 import { Timetable } from "@/components/Timetable";
 import axios from "axios";
 
+
+
+export interface SchedulerPayload {
+  subjects: {
+    name: string;
+    time: number;
+    no_of_classes_per_week: number;
+    faculty: {
+      id: string;
+      name: string;
+      availability: {
+        day: string;
+        startTime: string;
+        endTime: string;
+        _id?: string;
+      }[];
+    }[];
+  }[];
+  break_: {
+    day: string;
+    startTime: string;
+    endTime: string;
+  }[];
+  college_time: {
+    startTime: string;
+    endTime: string;
+  };
+  rooms: string[];
+}
+
 export default function RoomDetail() {
   const { roomId } = useParams<{ roomId: string }>();
   const { role, setIsLoading, setSelectedRoom, selectedRoom } = useApp();
@@ -143,7 +173,7 @@ export default function RoomDetail() {
     setIsGenerateModalOpen(true);
   };
 
-  const handleGenerateSuccess = async (payload: any) => {
+  const handleGenerateSuccess = async (payload: SchedulerPayload) => {
     setIsLoading(true);
     try {
       console.log("Generating timetable with payload from room :", payload);

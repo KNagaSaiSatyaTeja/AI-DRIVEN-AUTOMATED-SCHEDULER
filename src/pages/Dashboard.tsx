@@ -1,4 +1,3 @@
-
 import { useApp } from "@/context/AppContext";
 import { Button } from "@/components/ui/button";
 import { AddUserModal } from "@/components/AddUserModal";
@@ -8,66 +7,65 @@ import { RoomSchedule } from "@/components/RoomSchedule";
 import { Link } from "react-router-dom";
 import axios from "axios";
 
+export interface Faculty {
+  _id: string;
+  name: string;
+}
+
+export interface Room {
+  _id: string;
+  name: string;
+}
+
+export interface Subject {
+  _id: string;
+  name: string;
+  time: number;
+  noOfClassesPerWeek: number;
+  room: Room;
+  faculty: Faculty[];
+  isSpecial: boolean;
+  createdAt: string; // or Date, if parsed
+  updatedAt: string; // or Date
+  __v: number;
+}
+
 export default function Dashboard() {
   const { role, token, setIsLoading } = useApp();
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [timetables, setTimetables] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+
   const isAdmin = role === "admin";
 
   useEffect(() => {
-    const fetchTimetables = async () => {
+    const fetchSubjects = async () => {
       if (!token) return;
-      
       setIsLoading(true);
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api'}/timetable`,
+          `${import.meta.env.VITE_APP_API_BASE_URL}/subject`,
           {
             headers: {
-              Authorization: `Bearer ${token}`
-            }
+              Authorization: `Bearer ${token}`,
+            },
           }
         );
-        setTimetables(response.data);
+        setSubjects(response.data);
       } catch (error) {
-        console.error("Error fetching timetables:", error);
+        console.error("Error fetching subjects:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchTimetables();
+
+    fetchSubjects();
   }, [token, setIsLoading]);
 
-  const rooms = getUniqueRooms(timetables);
-
-  const refreshTimetables = async () => {
-    if (!token) return;
-    
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api'}/timetable`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-      setTimetables(response.data);
-    } catch (error) {
-      console.error("Error refreshing timetables:", error);
-    }
-  };
-
-  if (!token) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Please log in to view the dashboard.</div>
-      </div>
-    );
-  }
+  const rooms = getUniqueRooms(subjects); // expects subjects as input
 
   return (
     <div className="space-y-6">
+      {/* Header section */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -96,16 +94,25 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Room schedules */}
       <div className="space-y-6">
-        {rooms.length > 0 ? (
-          rooms.map((room) => <RoomSchedule key={room} roomId={room} />)
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">
-              No rooms found. Create a timetable to get started.
-            </p>
-          </div>
-        )}
+        {rooms.map((room) => {
+          const roomSubjects = subjects.filter((s) => s.room?.name === room);
+          const roomId = roomSubjects[0]?.room?._id;
+
+          return (
+            <div key={room} className="space-y-2">
+              {/* Per-room manage button */}
+
+              {/* Existing UI card component */}
+              <RoomSchedule
+                roomId={roomId}
+                roomName={room}
+                subjects={roomSubjects}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

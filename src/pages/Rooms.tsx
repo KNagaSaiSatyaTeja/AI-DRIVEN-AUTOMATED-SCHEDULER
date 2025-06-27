@@ -26,6 +26,22 @@ import { useToast } from "@/components/ui/use-toast";
 import { useApp } from "@/context/AppContext";
 import { roomsAPI } from "@/services/api";
 
+
+
+
+
+interface Room {
+  _id: string;
+  name: string;
+  capacity: number;
+  subjects: string[]; // Array of subject ObjectId strings
+  faculty: string[]; // Array of faculty ObjectId strings
+  createdAt: string; // or Date
+  updatedAt: string; // or Date
+  __v: number;
+}
+
+
 export default function Rooms() {
   const { role, setIsLoading } = useApp();
   const isAdmin = role === "admin";
@@ -51,7 +67,7 @@ export default function Rooms() {
         const data = await roomsAPI.getAll();
 
         // Map response data to extract _id and name
-        const roomData = data.map((room: any) => ({
+        const roomData = data.map((room: Room) => ({
           _id: room._id,
           name: room.name,
         }));

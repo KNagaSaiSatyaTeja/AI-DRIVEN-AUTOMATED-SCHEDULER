@@ -3,7 +3,12 @@ const mongoose = require("mongoose");
 // Schema for individual schedule entries
 const scheduleEntrySchema = new mongoose.Schema({
   subject_name: { type: String, required: true },
-  faculty_id: { type: String, required: true },
+  
+  faculty_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: "Faculty",
+  },
   faculty_name: { type: String, required: true },
   day: {
     type: String,
@@ -42,7 +47,11 @@ const dailyScheduleSchema = new mongoose.Schema(
 const timetableSchema = new mongoose.Schema({
   time_slots: [{ type: String, required: true }],
   days: dailyScheduleSchema,
-
+  room: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Room",
+    required: true,
+  },
   // Metadata
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
@@ -73,8 +82,9 @@ timetableSchema.methods.getScheduleForRoom = function (roomId) {
 
   dayNames.forEach((day) => {
     const daySchedule = this.days[day] || [];
+    // Fixed: Changed entry._id to entry.room_id and added null check
     const roomDaySchedule = daySchedule.filter(
-      (entry) => entry.room_id === roomId
+      (entry) => entry && entry.room_id === roomId
     );
     roomSchedule.push(...roomDaySchedule);
   });
@@ -96,8 +106,9 @@ timetableSchema.methods.getScheduleForFaculty = function (facultyId) {
 
   dayNames.forEach((day) => {
     const daySchedule = this.days[day] || [];
+    // Added null check for safety
     const facultyDaySchedule = daySchedule.filter(
-      (entry) => entry.faculty_id === facultyId
+      (entry) => entry && entry.faculty_id === facultyId
     );
     facultySchedule.push(...facultyDaySchedule);
   });
