@@ -1,4 +1,3 @@
-
 import { useApp } from "@/context/AppContext";
 import {
   Card,
@@ -16,26 +15,38 @@ import { EditUserModal } from "@/components/EditUserModal";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: "user" | "admin";
+  createdAt: string; // or Date, if parsed
+  updatedAt: string; // or Date
+  __v: number;
+}
+
 export default function Users() {
   const { role, token } = useApp();
   const isAdmin = role === "admin";
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [users, setUsers] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUsers = async () => {
       if (!token) return;
-      
+
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api'}/users`,
+          `${
+            import.meta.env.VITE_APP_API_BASE_URL || "http://localhost:5000/api"
+          }/users`,
           {
             headers: {
-              Authorization: `Bearer ${token}`
-            }
+              Authorization: `Bearer ${token}`,
+            },
           }
         );
         setUsers(response.data);
@@ -48,21 +59,23 @@ export default function Users() {
     fetchUsers();
   }, [token]);
 
-  const handleEditUser = (user: any) => {
+  const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setIsEditModalOpen(true);
   };
 
   const refreshUsers = async () => {
     if (!token) return;
-    
+
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_APP_API_BASE_URL || 'http://localhost:5000/api'}/users`,
+        `${
+          import.meta.env.VITE_APP_API_BASE_URL || "http://localhost:5000/api"
+        }/users`,
         {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
       setUsers(response.data);
@@ -99,17 +112,10 @@ export default function Users() {
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {users.map((user) => (
-          <Card
-            key={user._id}
-            className={cn(!isAdmin && "cursor-not-allowed")}
-          >
+          <Card key={user._id} className={cn(!isAdmin && "cursor-not-allowed")}>
             <CardHeader className="flex flex-row items-center space-x-4">
               <Avatar>
-                <AvatarImage
-                  src={
-                    user.avatar || `https://i.pravatar.cc/150?u=${user.email}`
-                  }
-                />
+                <AvatarImage alt={user.name} />
                 <AvatarFallback>
                   {user.name
                     .split(" ")
