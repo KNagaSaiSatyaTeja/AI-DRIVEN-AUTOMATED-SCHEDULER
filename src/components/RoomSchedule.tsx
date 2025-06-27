@@ -3,9 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
-
-
+import { useApp } from "@/context/AppContext";
 
 export interface Faculty {
   _id: string;
@@ -36,8 +34,6 @@ interface RoomScheduleProps {
   subjects: Subject[];
 }
 
-
-
 export function RoomSchedule({
   roomId,
   roomName,
@@ -57,17 +53,19 @@ export function RoomSchedule({
       roomSubjects.flatMap((s) => s.faculty?.map((f: Faculty) => f.name) || [])
     ),
   ];
-
+  const { role } = useApp();
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-4">
         <CardTitle className="text-lg">Room: {roomName}</CardTitle>
-        <Button asChild variant="outline" size="sm">
-          <Link to={`/rooms/${roomId}`}>
-            View & Manage
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
+        {
+          <Button asChild variant="outline" size="sm">
+            <Link to={`/rooms/${roomId}`}>
+              {role === "admin" ? "view & Manage" : "View room"}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        }
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
