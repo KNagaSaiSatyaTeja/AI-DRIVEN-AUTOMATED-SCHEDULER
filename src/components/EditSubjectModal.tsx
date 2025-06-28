@@ -96,7 +96,7 @@ export function EditSubjectModal({
         console.log(
           "Updating subject:",
           subject._id,
-          allFaculty.map((f) => f._id )
+          allFaculty.map((f) => f._id)
         );
         const data = await axios.put(
           `${
@@ -111,6 +111,7 @@ export function EditSubjectModal({
         );
         console.log("Subject updated successfully:", data);
       } else {
+        console.log("subject creatting", payload);
         await axios.post(
           `${
             import.meta.env.VITE_APP_API_BASE_URL

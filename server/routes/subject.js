@@ -10,14 +10,28 @@ router.post("/room/:roomId", [auth, adminOnly], async (req, res) => {
   try {
     const room = await Room.findById(roomId);
     if (!room) return res.status(404).json({ message: "Room not found" });
-    const faculty = await Faculty.find({ facultyId: { $in: facultyIds } });
-    if (faculty.length !== facultyIds.length)
-      return res.status(400).json({ message: "One or more faculty not found" });
+
+    const faculty = await Faculty.find({ _id: { $in: facultyIds } });
+
+    // FIX: Convert ObjectIds to strings for comparison
+    const foundIds = faculty.map((f) => f._id.toString());
+    const missingIds = facultyIds.filter((id) => !foundIds.includes(id));
+
+    if (missingIds.length > 0) {
+      return res.status(400).json({
+        message: "Faculty not found",
+        missingIds,
+      });
+    }
+
+    // Check if all faculty are assigned to the same room
     const invalidFaculty = faculty.find((f) => !f.room.equals(room._id));
-    if (invalidFaculty)
+    if (invalidFaculty) {
       return res
         .status(400)
         .json({ message: "Faculty must be assigned to the same room" });
+    }
+
     const subject = new Subject({
       name,
       time,
