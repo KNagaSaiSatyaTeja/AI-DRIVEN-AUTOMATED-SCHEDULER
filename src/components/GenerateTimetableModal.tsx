@@ -264,10 +264,10 @@ export function GenerateTimetableModal({
           name: subject.name,
           time: subject.time, // Keep as 'time' for API
           no_of_classes_per_week: subject.noOfClassesPerWeek, // Convert to API format
-          faculty: JSON.stringify(faculties),
+          faculty: faculties,
         };
 
-        console.log("Final subject detail:", subjectDetail);
+        console.log("Final subject detail:", JSON.stringify(subjectDetail));
         return subjectDetail;
       });
 

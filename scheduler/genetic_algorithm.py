@@ -1,5 +1,3 @@
-# # Genetic Algorithm for Scheduling
-# # This module implements a genetic algorithm to optimize scheduling assignments
 # import random
 # from typing import List, Callable, Tuple
 # import deap.base
@@ -55,7 +53,7 @@
 #             return -1
 
 #     def _create_individual(self) -> List[ScheduleAssignment]:
-#         """Create an individual by scheduling subjects across all non-break slots."""
+#         """Create an individual by scheduling subjects up to no_of_classes_per_week."""
 #         schedule = []
 #         used_slots_per_faculty = defaultdict(list)
 #         used_slots_per_room = defaultdict(list)
@@ -77,7 +75,7 @@
 #                     if slot_duration != subject.time:
 #                         continue
 #                     for avail in faculty.availability:
-#                         if slot.day == avail.day:
+#                         if slot.day == avail.day or avail.day == "ALL_DAYS":
 #                             try:
 #                                 avail_start = time_to_minutes(avail.startTime)
 #                                 avail_end = time_to_minutes(avail.endTime)
@@ -122,66 +120,12 @@
 #             if not assigned:
 #                 logger.warning(f"Could not assign subject: {subject.name}")
 
-#         # Step 2: Fill all remaining slots, ignoring subject count limits
+#         # Step 2: Do not fill remaining slots to avoid exceeding no_of_classes_per_week
 #         used_slots = set((a.day, a.startTime, a.endTime) for a in schedule)
 #         remaining_slots = [slot for slot in self.assignable_slots
 #                           if (slot.day, slot.startTime, slot.endTime) not in used_slots]
-
-#         remaining_subjects = [subject for subject in self.input_data.subjects]
-#         random.shuffle(remaining_subjects)
-
-#         for slot in remaining_slots:
-#             slot_duration = self._get_slot_duration(slot)
-#             if slot_duration <= 0:
-#                 continue
-#             subjects_to_consider = [s for s in remaining_subjects if s.time == slot_duration]
-#             if not subjects_to_consider:
-#                 continue
-
-#             assigned = False
-#             for subject in subjects_to_consider:
-#                 for faculty in random.sample(subject.faculty, len(subject.faculty)):
-#                     valid_slot = False
-#                     for avail in faculty.availability:
-#                         if slot.day == avail.day:
-#                             try:
-#                                 avail_start = time_to_minutes(avail.startTime)
-#                                 avail_end = time_to_minutes(avail.endTime)
-#                                 slot_start = time_to_minutes(slot.startTime)
-#                                 slot_end = time_to_minutes(slot.endTime)
-#                                 if avail_start <= slot_start and slot_end <= avail_end:
-#                                     valid_slot = True
-#                                     break
-#                             except ValueError as e:
-#                                 logger.error(f"Time parsing error in _create_individual for faculty {faculty.id}: {e}")
-#                                 continue
-
-#                     if not valid_slot:
-#                         continue
-
-#                     if any(slot.day == s.day and check_time_conflict(slot, s)
-#                            for s in used_slots_per_faculty[faculty.id] + used_slots_per_room[self.fixed_room_id]):
-#                         continue
-#                     if self.conflict_checker and not self.conflict_checker(faculty.id, slot, self.fixed_room_id, self.input_data):
-#                         continue
-
-#                     assignment = ScheduleAssignment(
-#                         subject_name=subject.name,
-#                         faculty_id=faculty.id,
-#                         faculty_name=faculty.name,
-#                         day=slot.day,
-#                         startTime=slot.startTime,
-#                         endTime=slot.endTime,
-#                         room_id=self.fixed_room_id
-#                     )
-#                     schedule.append(assignment)
-#                     used_slots_per_faculty[faculty.id].append(slot)
-#                     used_slots_per_room[self.fixed_room_id].append(slot)
-#                     subject_counts[subject.name] = subject_counts.get(subject.name, 0) + 1
-#                     assigned = True
-#                     break
-#                 if assigned:
-#                     break
+#         if remaining_slots:
+#             logger.info(f"Leaving {len(remaining_slots)} slots unassigned to respect no_of_classes_per_week")
 
 #         logger.info(f"Individual created with {len(schedule)} assignments")
 #         return schedule
@@ -202,11 +146,14 @@
 #             subject_counts[a.subject_name] += 1
 
 #         class_requirement_penalty = 0
+#         excess_penalty = 0
 #         for s in self.input_data.subjects:
 #             required = s.no_of_classes_per_week
 #             scheduled = subject_counts.get(s.name, 0)
 #             if scheduled < required:
 #                 class_requirement_penalty += (required - scheduled) * 1000
+#             elif scheduled > required:
+#                 excess_penalty += (scheduled - required) * 1000
 
 #         conflicts = 0
 #         used_slots_per_faculty = defaultdict(list)
@@ -228,7 +175,7 @@
 #         unfilled_slots = len(self.assignable_slots) - len(used_slots)
 #         unfilled_penalty = unfilled_slots * 5000
 
-#         fitness = class_requirement_penalty + (conflicts * 100) + unfilled_penalty
+#         fitness = class_requirement_penalty + excess_penalty + (conflicts * 100) + unfilled_penalty
 #         return (fitness,)
 
 #     def _valid_population(self, n):
@@ -312,6 +259,7 @@
 #         used_slots_per_faculty = defaultdict(list)
 #         used_slots_per_room = defaultdict(list)
 #         temp_schedule = []
+#         subject_counts = {subject.name: 0 for subject in self.input_data.subjects}
 #         for a in individual:
 #             slot = TimeSlot(day=a.day, startTime=a.startTime, endTime=a.endTime)
 #             if any(slot.day == s.day and check_time_conflict(slot, s)
@@ -319,9 +267,12 @@
 #                 continue
 #             if check_break_conflict(slot, self.input_data.break_):
 #                 continue
+#             if subject_counts[a.subject_name] >= next(s.no_of_classes_per_week for s in self.input_data.subjects if s.name == a.subject_name):
+#                 continue
 #             temp_schedule.append(a)
 #             used_slots_per_faculty[a.faculty_id].append(slot)
 #             used_slots_per_room[a.room_id].append(slot)
+#             subject_counts[a.subject_name] += 1
 #         individual[:] = temp_schedule
 
 #         for i in range(len(individual)):
@@ -331,6 +282,7 @@
 #                 old_slot = TimeSlot(day=individual[i].day, startTime=individual[i].startTime, endTime=individual[i].endTime)
 #                 used_slots_per_faculty[individual[i].faculty_id].remove(old_slot)
 #                 used_slots_per_room[self.fixed_room_id].remove(old_slot)
+#                 subject_counts[subject_name] -= 1
 
 #                 assigned = False
 #                 for faculty in random.sample(subject.faculty, len(subject.faculty)):
@@ -340,7 +292,7 @@
 #                         if slot_duration != subject.time:
 #                             continue
 #                         for avail in faculty.availability:
-#                             if slot.day == avail.day:
+#                             if slot.day == avail.day or avail.day == "ALL_DAYS":
 #                                 try:
 #                                     avail_start = time_to_minutes(avail.startTime)
 #                                     avail_end = time_to_minutes(avail.endTime)
@@ -359,6 +311,8 @@
 #                             continue
 #                         if self.conflict_checker and not self.conflict_checker(faculty.id, slot, self.fixed_room_id, self.input_data):
 #                             continue
+#                         if subject_counts[subject.name] >= subject.no_of_classes_per_week:
+#                             continue
 #                         individual[i] = ScheduleAssignment(
 #                             subject_name=subject.name,
 #                             faculty_id=faculty.id,
@@ -370,6 +324,7 @@
 #                         )
 #                         used_slots_per_faculty[faculty.id].append(slot)
 #                         used_slots_per_room[self.fixed_room_id].append(slot)
+#                         subject_counts[subject.name] += 1
 #                         assigned = True
 #                         break
 #                     if assigned:
@@ -416,8 +371,6 @@
 #         best = deap.tools.selBest(pop, k=1)[0]
 #         logger.info("Genetic Algorithm completed.")
 #         return best, best.fitness.values[0]
-# Genetic Algorithm for Scheduling
-# This module implements a genetic algorithm to optimize scheduling assignments
 import random
 from typing import List, Callable, Tuple
 import deap.base
@@ -473,22 +426,18 @@ class GeneticAlgorithm:
             return -1
 
     def _create_individual(self) -> List[ScheduleAssignment]:
-        """Create an individual by scheduling subjects up to no_of_classes_per_week."""
+        """Create an individual by randomly scheduling subjects within faculty availability."""
         schedule = []
         used_slots_per_faculty = defaultdict(list)
         used_slots_per_room = defaultdict(list)
         subject_counts = {subject.name: 0 for subject in self.input_data.subjects}
 
-        # Step 1: Meet the minimum requirements for each subject
-        subjects_to_assign = []
+        # Create a list of all possible assignments
+        possible_assignments = []
         for subject in self.input_data.subjects:
-            for _ in range(subject.no_of_classes_per_week):
-                subjects_to_assign.append(subject)
-        random.shuffle(subjects_to_assign)
-
-        for subject in subjects_to_assign:
-            assigned = False
-            for faculty in random.sample(subject.faculty, len(subject.faculty)):
+            if subject_counts.get(subject.name, 0) >= subject.no_of_classes_per_week:
+                continue
+            for faculty in subject.faculty:
                 valid_slots = []
                 for slot in self.assignable_slots:
                     slot_duration = self._get_slot_duration(slot)
@@ -507,45 +456,34 @@ class GeneticAlgorithm:
                             except ValueError as e:
                                 logger.error(f"Time parsing error in _create_individual for faculty {faculty.id}: {e}")
                                 continue
+                for slot in valid_slots:
+                    possible_assignments.append((subject, faculty, slot))
 
-                if not valid_slots:
-                    continue
+        # Randomly assign subjects up to no_of_classes_per_week
+        random.shuffle(possible_assignments)
+        for subject, faculty, slot in possible_assignments:
+            if subject_counts.get(subject.name, 0) >= subject.no_of_classes_per_week:
+                continue
+            if any(slot.day == s.day and check_time_conflict(slot, s)
+                   for s in used_slots_per_faculty[faculty.id] + used_slots_per_room[self.fixed_room_id]):
+                continue
+            if self.conflict_checker and not self.conflict_checker(faculty.id, slot, self.fixed_room_id, self.input_data):
+                continue
 
-                for slot in random.sample(valid_slots, len(valid_slots)):
-                    if any(slot.day == s.day and check_time_conflict(slot, s)
-                           for s in used_slots_per_faculty[faculty.id] + used_slots_per_room[self.fixed_room_id]):
-                        continue
-                    if self.conflict_checker and not self.conflict_checker(faculty.id, slot, self.fixed_room_id, self.input_data):
-                        continue
-
-                    assignment = ScheduleAssignment(
-                        subject_name=subject.name,
-                        faculty_id=faculty.id,
-                        faculty_name=faculty.name,
-                        day=slot.day,
-                        startTime=slot.startTime,
-                        endTime=slot.endTime,
-                        room_id=self.fixed_room_id
-                    )
-                    schedule.append(assignment)
-                    used_slots_per_faculty[faculty.id].append(slot)
-                    used_slots_per_room[self.fixed_room_id].append(slot)
-                    subject_counts[subject.name] += 1
-                    assigned = True
-                    logger.debug(f"Assigned {subject.name} to {faculty.name} at {slot.day} {slot.startTime}-{slot.endTime}")
-                    break
-                if assigned:
-                    break
-
-            if not assigned:
-                logger.warning(f"Could not assign subject: {subject.name}")
-
-        # Step 2: Do not fill remaining slots to avoid exceeding no_of_classes_per_week
-        used_slots = set((a.day, a.startTime, a.endTime) for a in schedule)
-        remaining_slots = [slot for slot in self.assignable_slots
-                          if (slot.day, slot.startTime, slot.endTime) not in used_slots]
-        if remaining_slots:
-            logger.info(f"Leaving {len(remaining_slots)} slots unassigned to respect no_of_classes_per_week")
+            assignment = ScheduleAssignment(
+                subject_name=subject.name,
+                faculty_id=faculty.id,
+                faculty_name=faculty.name,
+                day=slot.day,
+                startTime=slot.startTime,
+                endTime=slot.endTime,
+                room_id=self.fixed_room_id
+            )
+            schedule.append(assignment)
+            used_slots_per_faculty[faculty.id].append(slot)
+            used_slots_per_room[self.fixed_room_id].append(slot)
+            subject_counts[subject.name] += 1
+            logger.debug(f"Assigned {subject.name} to {faculty.name} at {slot.day} {slot.startTime}-{slot.endTime}")
 
         logger.info(f"Individual created with {len(schedule)} assignments")
         return schedule
