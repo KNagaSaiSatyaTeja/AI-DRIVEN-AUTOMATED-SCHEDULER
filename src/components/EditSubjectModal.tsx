@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,7 +55,7 @@ export function EditSubjectModal({
 }: EditSubjectModalProps) {
   const { selectedRoom, setIsLoading, token } = useApp();
   const { toast } = useToast();
-  
+
   const form = useForm<SubjectFormValues>({
     resolver: zodResolver(subjectSchema),
     defaultValues: {
@@ -83,7 +82,7 @@ export function EditSubjectModal({
   const onSubmit = async (data: SubjectFormValues) => {
     if (!selectedRoom || !token) return;
     setIsLoading(true);
-    
+
     try {
       const payload = {
         name: data.name,
@@ -94,8 +93,15 @@ export function EditSubjectModal({
       };
 
       if (subject) {
-        await axios.put(
-          `${import.meta.env.VITE_APP_API_BASE_URL}/subject/room/${selectedRoom}/${subject._id}`,
+        console.log(
+          "Updating subject:",
+          subject._id,
+          allFaculty.map((f) => f._id )
+        );
+        const data = await axios.put(
+          `${
+            import.meta.env.VITE_APP_API_BASE_URL
+          }/subject/room/${selectedRoom}/${subject._id}`,
           payload,
           {
             headers: {
@@ -103,9 +109,12 @@ export function EditSubjectModal({
             },
           }
         );
+        console.log("Subject updated successfully:", data);
       } else {
         await axios.post(
-          `${import.meta.env.VITE_APP_API_BASE_URL}/subject/room/${selectedRoom}`,
+          `${
+            import.meta.env.VITE_APP_API_BASE_URL
+          }/subject/room/${selectedRoom}`,
           payload,
           {
             headers: {
@@ -114,12 +123,12 @@ export function EditSubjectModal({
           }
         );
       }
-      
+
       toast({
         title: "Success",
         description: "Subject saved successfully.",
       });
-      
+
       onSaveSuccess();
       onOpenChange(false);
     } catch (error) {

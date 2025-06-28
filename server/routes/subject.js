@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const { Subject, Room, Faculty } = require("../models");
 const { auth, adminOnly } = require("../middleware/auth");
@@ -55,42 +56,100 @@ router.get("/room/:roomId", auth, async (req, res) => {
 router.put("/room/:roomId/:id", [auth, adminOnly], async (req, res) => {
   const { roomId, id } = req.params;
   const { name, time, noOfClassesPerWeek, facultyIds, isSpecial } = req.body;
+
   try {
-    const room = await Room.findById({ roomId });
-    if (!room) return res.status(404).json({ message: "Room not found" });
+    // Validate roomId and id as valid ObjectIds
+    if (!mongoose.isValidObjectId(roomId)) {
+      return res.status(400).json({ message: "Invalid roomId format" });
+    }
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid subject id format" });
+    }
+
+    // Find the room
+    const room = await Room.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    // Find the subject
     const subject = await Subject.findById(id);
-    if (!subject) return res.status(404).json({ message: "Subject not found" });
-    if (!subject.room.equals(room._id))
+    if (!subject) {
+      return res.status(404).json({ message: "Subject not found" });
+    }
+
+    // Check if subject is assigned to the room
+    if (!subject.room.equals(room._id)) {
       return res
         .status(400)
         .json({ message: "Subject not assigned to this room" });
+    }
+
+    // Validate and fetch faculty if provided
     let faculty = [];
-    if (facultyIds) {
-      faculty = await Faculty.find({ facultyId: { $in: facultyIds } });
-      if (faculty.length !== facultyIds.length)
+    if (facultyIds && facultyIds.length > 0) {
+      if (!Array.isArray(facultyIds)) {
+        return res.status(400).json({ message: "facultyIds must be an array" });
+      }
+
+      // Validate each facultyId
+      for (const facultyId of facultyIds) {
+        
+        if (!mongoose.isValidObjectId(facultyId)) {
+          return res
+            .status(400)
+            .json({ message: `Invalid facultyId: ${facultyId}` });
+        }
+      }
+
+      faculty = await Faculty.find({ _id: { $in: facultyIds } });
+      if (faculty.length !== facultyIds.length) {
         return res
           .status(400)
           .json({ message: "One or more faculty not found" });
+      }
+
+      // Check if all faculty are assigned to the same room
       const invalidFaculty = faculty.find((f) => !f.room.equals(room._id));
-      if (invalidFaculty)
+      if (invalidFaculty) {
         return res
           .status(400)
           .json({ message: "Faculty must be assigned to the same room" });
+      }
     }
-    const updateData = {
-      name,
-      time,
-      noOfClassesPerWeek,
-      isSpecial,
-      updatedAt: Date.now(),
-    };
-    if (facultyIds) updateData.faculty = faculty.map((f) => f._id);
+
+    // Prepare update data - only include fields that are provided
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (time !== undefined) updateData.time = time;
+    if (noOfClassesPerWeek !== undefined)
+      updateData.noOfClassesPerWeek = noOfClassesPerWeek;
+    if (isSpecial !== undefined) updateData.isSpecial = isSpecial;
+    if (facultyIds !== undefined)
+      updateData.faculty = faculty.map((f) => f._id);
+
+    updateData.updatedAt = new Date();
+
+    // Update the subject
     const updatedSubject = await Subject.findByIdAndUpdate(id, updateData, {
       new: true,
+      runValidators: true,
     }).populate("faculty");
+    console.log("Updated subject:", updatedSubject);
+
     res.json({ message: "Subject updated", subject: updatedSubject });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("PUT /room/:roomId/:id error:", error);
+    if (error.name === "CastError") {
+      return res
+        .status(400)
+        .json({ message: `Invalid ID format: ${error.message}` });
+    }
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ message: error.message });
+    }
+    console.error("Error updating subject:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -108,21 +167,50 @@ router.get("/", [auth], async (req, res) => {
 router.delete("/room/:roomId/:id", [auth, adminOnly], async (req, res) => {
   const { roomId, id } = req.params;
   try {
-    const room = await Room.findById({ roomId });
-    if (!room) return res.status(404).json({ message: "Room not found" });
+    // Validate ObjectIds
+    if (!mongoose.isValidObjectId(roomId)) {
+      return res.status(400).json({ message: "Invalid roomId format" });
+    }
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid subject id format" });
+    }
+
+    // Find the room - FIXED: was using { roomId } instead of roomId
+    const room = await Room.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+
+    // Find the subject
     const subject = await Subject.findById(id);
-    if (!subject) return res.status(404).json({ message: "Subject not found" });
-    if (!subject.room.equals(room._id))
+    if (!subject) {
+      return res.status(404).json({ message: "Subject not found" });
+    }
+
+    // Check if subject is assigned to the room
+    if (!subject.room.equals(room._id)) {
       return res
         .status(400)
         .json({ message: "Subject not assigned to this room" });
+    }
+
+    // Remove subject from room's subjects array
     await Room.findByIdAndUpdate(room._id, {
       $pull: { subjects: subject._id },
     });
-    await subject.deleteOne();
-    res.json({ message: "Subject deleted" });
+
+    // Delete the subject
+    await Subject.findByIdAndDelete(id);
+
+    res.json({ message: "Subject deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("DELETE /room/:roomId/:id error:", error);
+    if (error.name === "CastError") {
+      return res
+        .status(400)
+        .json({ message: `Invalid ID format: ${error.message}` });
+    }
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 

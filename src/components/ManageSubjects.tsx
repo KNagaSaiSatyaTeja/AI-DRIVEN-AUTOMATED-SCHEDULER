@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { TimetableConfig, SubjectConfig, FacultyConfig } from "@/data/schedule";
 import {
@@ -61,7 +60,7 @@ export function ManageSubjects({
         name: s.name,
         duration: s.time,
         no_of_classes_per_week: s.noOfClassesPerWeek,
-        facultyIds: s.faculty?.map((f: any) => f.facultyId || f._id) || [],
+        facultyIds: s.faculty?.map((f: any) => f._id) || [],
         isSpecial: s.isSpecial || false,
       }));
 

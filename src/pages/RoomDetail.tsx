@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -36,8 +35,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { GenerateTimetableModal } from "@/components/GenerateTimetableModal";
 import { Timetable } from "@/components/Timetable";
 import axios from "axios";
-
-
 
 export interface SchedulerPayload {
   subjects: {
@@ -204,6 +201,7 @@ export default function RoomDetail() {
             },
           }
         );
+
         setTimetables([data.data]);
       }
     } catch (error) {
@@ -217,7 +215,11 @@ export default function RoomDetail() {
     }
   };
 
-  const updateBreak = (index: number, field: keyof BreakConfig, value: unknown) => {
+  const updateBreak = (
+    index: number,
+    field: keyof BreakConfig,
+    value: unknown
+  ) => {
     setConfig((prev) => {
       const newBreaks = [...prev.breaks];
       newBreaks[index] = { ...newBreaks[index], [field]: value };

@@ -62,7 +62,7 @@ router.get("/room/:roomId", auth, async (req, res) => {
     const room = await Room.findById(roomId);
     if (!room) return res.status(404).json({ message: "Room not found" });
     const faculty = await Faculty.find({ room: room._id }).select(
-      "facultyId name availability createdAt updatedAt"
+      "_id name availability createdAt updatedAt"
     );
     res.json(faculty);
   } catch (error) {
